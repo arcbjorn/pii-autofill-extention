@@ -26,6 +26,7 @@
             <button class="tab-button" data-tab="work">Work</button>
             <button class="tab-button" data-tab="custom">Custom</button>
             <button class="tab-button" data-tab="rules">Site Rules</button>
+            <button class="tab-button" data-tab="dev" id="devTab" style="display: none;">Dev Tools</button>
             <button class="tab-button" data-tab="settings">Settings</button>
         </div>
 
@@ -202,6 +203,78 @@
                     <div class="file-input-wrapper">
                         <input type="file" id="importRules" accept=".json" hidden>
                         <button id="importRulesBtn" class="btn btn-secondary">Import Rules</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="dev-tab">
+            <div class="profile-section">
+                <div class="section-header">
+                    <h3>🛠️ Development Tools</h3>
+                    <div>
+                        <button id="reloadExtension" class="btn btn-secondary">🔄 Reload</button>
+                        <button id="clearDevLogs" class="btn btn-secondary">🗑️ Clear</button>
+                    </div>
+                </div>
+                <div class="dev-status">
+                    <span class="dev-status-indicator" id="devStatus">🔴 Disconnected</span>
+                    <span id="devServerUrl">ws://localhost:3001</span>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <h3>📝 Console Logs</h3>
+                <div class="log-controls">
+                    <label>
+                        <input type="checkbox" id="logError" checked> Errors
+                    </label>
+                    <label>
+                        <input type="checkbox" id="logWarn" checked> Warnings
+                    </label>
+                    <label>
+                        <input type="checkbox" id="logInfo" checked> Info
+                    </label>
+                    <label>
+                        <input type="checkbox" id="logDebug"> Debug
+                    </label>
+                    <button id="downloadLogs" class="btn btn-secondary">💾 Download</button>
+                </div>
+                <div id="devLogs" class="dev-log-container"></div>
+            </div>
+
+            <div class="profile-section">
+                <h3>💾 Storage Inspector</h3>
+                <div class="storage-controls">
+                    <button id="refreshStorage" class="btn btn-secondary">🔄 Refresh</button>
+                    <button id="exportStorage" class="btn btn-secondary">📤 Export</button>
+                    <button id="clearStorage" class="btn btn-secondary">🗑️ Clear All</button>
+                </div>
+                <div class="storage-tabs">
+                    <button class="storage-tab active" data-storage="sync">Sync Storage</button>
+                    <button class="storage-tab" data-storage="local">Local Storage</button>
+                </div>
+                <div id="storageContent" class="storage-viewer"></div>
+            </div>
+
+            <div class="profile-section">
+                <h3>🔍 Extension Info</h3>
+                <div class="extension-info">
+                    <div class="info-row">
+                        <span class="info-label">Extension ID:</span>
+                        <span id="extensionId">Loading...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Version:</span>
+                        <span id="extensionVersion">Loading...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Manifest Version:</span>
+                        <span id="manifestVersion">Loading...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Last Reload:</span>
+                        <span id="lastReload">Never</span>
                     </div>
                 </div>
             </div>
