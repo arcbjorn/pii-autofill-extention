@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PII Autofill Extension - Test Forms</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .form-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #666;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        .test-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .sensitive-field {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .sensitive-field h3 {
+            margin-top: 0;
+            color: #f57c00;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 PII Autofill Extension - Test Forms</h1>
+    
+    <div class="test-info">
+        <strong>Testing Instructions:</strong>
+        <ol>
+            <li>Install the PII Autofill Extension</li>
+            <li>Fill out your profile information in the extension popup</li>
+            <li>Use the extension's "Detect Fields" button or context menu to autofill these forms</li>
+            <li>Test different field detection and autofill scenarios</li>
+        </ol>
+    </div>
+
+    <!-- Personal Information Form -->
+    <div class="form-section">
+        <h2>👤 Personal Information Form</h2>
+        <form id="personalForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="first_name">First Name</label>
+                    <input type="text" id="first_name" name="first_name" placeholder="Enter your first name">
+                </div>
+                <div class="form-group">
+                    <label for="last_name">Last Name</label>
+                    <input type="text" id="last_name" name="last_name" placeholder="Enter your last name">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="email_address">Email Address</label>
+                <input type="email" id="email_address" name="email" placeholder="your.email@example.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="phone_number">Phone Number</label>
+                <input type="tel" id="phone_number" name="phone" placeholder="+1 (555) 123-4567">
+            </div>
+            
+            <div class="form-group">
+                <label for="date_of_birth">Date of Birth</label>
+                <input type="date" id="date_of_birth" name="dob">
+            </div>
+            
+            <button type="submit">Submit Personal Info</button>
+        </form>
+    </div>
+
+    <!-- Address Information Form -->
+    <div class="form-section">
+        <h2>🏠 Address Information Form</h2>
+        <form id="addressForm">
+            <div class="form-group">
+                <label for="street_address">Street Address</label>
+                <input type="text" id="street_address" name="address" placeholder="123 Main Street">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <input type="text" id="city" name="city" placeholder="New York">
+                </div>
+                <div class="form-group">
+                    <label for="state">State/Province</label>
+                    <input type="text" id="state" name="state" placeholder="NY">
+                </div>
+                <div class="form-group">
+                    <label for="postal_code">ZIP/Postal Code</label>
+                    <input type="text" id="postal_code" name="zip" placeholder="10001">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="country">Country</label>
+                <select id="country" name="country">
+                    <option value="">Select Country</option>
+                    <option value="US">United States</option>
+                    <option value="CA">Canada</option>
+                    <option value="UK">United Kingdom</option>
+                    <option value="AU">Australia</option>
+                </select>
+            </div>
+            
+            <button type="submit">Submit Address</button>
+        </form>
+    </div>
+
+    <!-- Work Information Form -->
+    <div class="form-section">
+        <h2>💼 Professional Information Form</h2>
+        <form id="workForm">
+            <div class="form-group">
+                <label for="company_name">Company Name</label>
+                <input type="text" id="company_name" name="company" placeholder="Acme Corporation">
+            </div>
+            
+            <div class="form-group">
+                <label for="job_title">Job Title</label>
+                <input type="text" id="job_title" name="title" placeholder="Software Engineer">
+            </div>
+            
+            <div class="form-group">
+                <label for="work_email">Work Email</label>
+                <input type="email" id="work_email" name="work_email" placeholder="john@company.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="work_phone">Work Phone</label>
+                <input type="tel" id="work_phone" name="work_phone" placeholder="+1 (555) 987-6543">
+            </div>
+            
+            <div class="form-group">
+                <label for="linkedin">LinkedIn Profile</label>
+                <input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/username">
+            </div>
+            
+            <button type="submit">Submit Work Info</button>
+        </form>
+    </div>
+
+    <!-- Payment Form (Sensitive) -->
+    <div class="form-section">
+        <div class="sensitive-field">
+            <h3>⚠️ Sensitive Payment Information</h3>
+            <p><strong>Note:</strong> This form contains sensitive fields that should be encrypted by the extension.</p>
+        </div>
+        
+        <h2>💳 Payment Information Form</h2>
+        <form id="paymentForm">
+            <div class="form-group">
+                <label for="card_number">Credit Card Number</label>
+                <input type="text" id="card_number" name="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="expiry_month">Expiry Month</label>
+                    <select id="expiry_month" name="exp_month">
+                        <option value="">Month</option>
+                        <option value="01">01</option>
+                        <option value="02">02</option>
+                        <option value="03">03</option>
+                        <option value="04">04</option>
+                        <option value="05">05</option>
+                        <option value="06">06</option>
+                        <option value="07">07</option>
+                        <option value="08">08</option>
+                        <option value="09">09</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="expiry_year">Expiry Year</label>
+                    <select id="expiry_year" name="exp_year">
+                        <option value="">Year</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                        <option value="2028">2028</option>
+                        <option value="2029">2029</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="cvv">CVV</label>
+                    <input type="text" id="cvv" name="cvv" placeholder="123" maxlength="4">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="cardholder_name">Cardholder Name</label>
+                <input type="text" id="cardholder_name" name="cardName" placeholder="John Doe">
+            </div>
+            
+            <button type="submit">Submit Payment Info</button>
+        </form>
+    </div>
+
+    <!-- Alternative Field Names Test -->
+    <div class="form-section">
+        <h2>🔍 Alternative Field Names Test</h2>
+        <p>This form uses different field naming conventions to test the extension's detection capabilities.</p>
+        
+        <form id="altFieldsForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="fname">First Name (fname)</label>
+                    <input type="text" id="fname" name="fname">
+                </div>
+                <div class="form-group">
+                    <label for="lname">Last Name (lname)</label>
+                    <input type="text" id="lname" name="lname">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="email_addr">Email (email_addr)</label>
+                <input type="email" id="email_addr" name="email_addr">
+            </div>
+            
+            <div class="form-group">
+                <label for="tel">Telephone (tel)</label>
+                <input type="tel" id="tel" name="tel">
+            </div>
+            
+            <div class="form-group">
+                <label for="addr1">Address Line 1 (addr1)</label>
+                <input type="text" id="addr1" name="addr1">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="locality">City (locality)</label>
+                    <input type="text" id="locality" name="locality">
+                </div>
+                <div class="form-group">
+                    <label for="region">State (region)</label>
+                    <input type="text" id="region" name="region">
+                </div>
+                <div class="form-group">
+                    <label for="postal">ZIP (postal)</label>
+                    <input type="text" id="postal" name="postal">
+                </div>
+            </div>
+            
+            <button type="submit">Submit Alternative Fields</button>
+        </form>
+    </div>
+
+    <!-- Dynamic Form Test -->
+    <div class="form-section">
+        <h2>⚡ Dynamic Form Test</h2>
+        <p>This section tests the extension's ability to detect dynamically added fields.</p>
+        
+        <button onclick="addDynamicFields()">Add Dynamic Fields</button>
+        <div id="dynamicFieldsContainer"></div>
+    </div>
+
+    <script>
+        // Form submission handlers
+        document.getElementById('personalForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Personal form submitted! (Prevented for testing)');
+        });
+
+        document.getElementById('addressForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Address form submitted! (Prevented for testing)');
+        });
+
+        document.getElementById('workForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Work form submitted! (Prevented for testing)');
+        });
+
+        document.getElementById('paymentForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Payment form submitted! (Prevented for testing)');
+        });
+
+        document.getElementById('altFieldsForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Alternative fields form submitted! (Prevented for testing)');
+        });
+
+        // Dynamic field addition
+        function addDynamicFields() {
+            const container = document.getElementById('dynamicFieldsContainer');
+            
+            if (container.children.length > 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = `
+                <form id="dynamicForm" style="margin-top: 20px;">
+                    <div class="form-group">
+                        <label for="dynamic_name">Full Name (Dynamic)</label>
+                        <input type="text" id="dynamic_name" name="fullName" placeholder="Enter full name">
+                    </div>
+                    <div class="form-group">
+                        <label for="dynamic_email">Email (Dynamic)</label>
+                        <input type="email" id="dynamic_email" name="emailAddress" placeholder="Enter email">
+                    </div>
+                    <div class="form-group">
+                        <label for="dynamic_company">Company (Dynamic)</label>
+                        <input type="text" id="dynamic_company" name="companyName" placeholder="Enter company">
+                    </div>
+                    <button type="submit">Submit Dynamic Form</button>
+                </form>
+            `;
+
+            document.getElementById('dynamicForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                alert('Dynamic form submitted! (Prevented for testing)');
+            });
+
+            // Notify extension about new fields
+            if (window.dispatchEvent) {
+                window.dispatchEvent(new CustomEvent('dynamicContentLoaded'));
+            }
+        }
+
+        // Credit card formatting
+        document.getElementById('card_number').addEventListener('input', (e) => {
+            let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ');
+            if (formattedValue) {
+                e.target.value = formattedValue;
+            }
+        });
+
+        console.log('🧪 Test forms page loaded. Ready for extension testing!');
+    </script>
+</body>
+</html>
