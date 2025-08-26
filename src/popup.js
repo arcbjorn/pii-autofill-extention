@@ -11,6 +11,8 @@ class PopupManager {
         this.customFields = [];
         this.fieldMappings = {};
         this.detectedFields = [];
+        this.siteRules = null;
+        this.customRules = new Map();
         
         this.init();
     }
@@ -22,6 +24,7 @@ class PopupManager {
         this.loadCustomFields();
         this.detectCurrentPageFields();
         this.populateFieldMappings();
+        await this.loadSiteRules();
     }
 
     async loadProfiles() {
@@ -135,6 +138,8 @@ class PopupManager {
         this.setupTabs();
         if (tab === 'custom') {
             this.loadCustomFields();
+        } else if (tab === 'rules') {
+            this.loadSiteRules();
         }
     }
 
@@ -487,6 +492,425 @@ class PopupManager {
         setTimeout(() => {
             messageEl.remove();
         }, 3000);
+    }
+
+    // Site Rules Management
+    async loadSiteRules() {
+        try {
+            const result = await chrome.storage.sync.get(['customSiteRules']);
+            const customRules = result.customSiteRules || {};
+            
+            this.customRules = new Map(Object.entries(customRules));
+            await this.getCurrentSiteRules();
+            this.renderSiteRulesUI();
+        } catch (error) {
+            console.error('Error loading site rules:', error);
+        }
+    }
+
+    async getCurrentSiteRules() {
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            const response = await chrome.tabs.sendMessage(tab.id, {
+                action: 'getCurrentSiteRules'
+            });
+            
+            this.siteRules = response.rules || null;
+            this.updateCurrentSiteDisplay();
+        } catch (error) {
+            console.error('Error getting current site rules:', error);
+        }
+    }
+
+    updateCurrentSiteDisplay() {
+        const container = document.getElementById('currentSiteRules');
+        
+        if (!this.siteRules) {
+            container.innerHTML = '<p class="no-fields">No specific rules for current site</p>';
+            return;
+        }
+
+        const hostname = new URL(window.location.href).hostname;
+        container.innerHTML = `
+            <div class="current-site-info">
+                <div class="current-site-name">${hostname}</div>
+                <div class="current-site-rules">
+                    <span class="rule-status ${this.siteRules.site ? 'active' : 'inactive'}">
+                        ${this.siteRules.site ? 'Active Rules' : 'No Rules'}
+                    </span>
+                    ${this.siteRules.type ? `<span class="rule-priority ${this.siteRules.type}">${this.siteRules.type}</span>` : ''}
+                </div>
+                ${this.siteRules.skipFields?.length ? `
+                    <div class="skip-fields-list">
+                        <h5>Skip Fields:</h5>
+                        ${this.siteRules.skipFields.map(field => 
+                            `<span class="skip-field-tag">${field}</span>`
+                        ).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    renderSiteRulesUI() {
+        this.renderCustomRules();
+        this.setupRulesEventListeners();
+    }
+
+    renderCustomRules() {
+        const container = document.getElementById('customRulesContainer');
+        
+        if (this.customRules.size === 0) {
+            container.innerHTML = '<p class="no-fields">No custom rules defined</p>';
+            return;
+        }
+
+        container.innerHTML = Array.from(this.customRules.entries()).map(([pattern, rules]) => `
+            <div class="custom-rule-item">
+                <div class="custom-rule-header">
+                    <span class="custom-rule-pattern">${pattern}</span>
+                    <div class="custom-rule-actions">
+                        <button class="btn btn-secondary edit-rule" data-pattern="${pattern}">Edit</button>
+                        <button class="btn remove-field remove-rule" data-pattern="${pattern}">Remove</button>
+                    </div>
+                </div>
+                <div class="custom-rule-body">
+                    ${this.renderRuleFields(rules)}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderRuleFields(rules) {
+        const fields = rules.fields || {};
+        const skipFields = rules.skipFields || [];
+        
+        let html = '<h5>Field Mappings:</h5>';
+        
+        if (Object.keys(fields).length === 0) {
+            html += '<p style="font-size: 13px; color: #6c757d;">No field mappings defined</p>';
+        } else {
+            html += Object.entries(fields).map(([selector, config]) => `
+                <div class="rule-field-mapping">
+                    <code style="font-size: 11px; word-break: break-all;">${selector}</code>
+                    <span>${config.type} <span class="rule-priority ${config.priority || 'medium'}">${config.priority || 'medium'}</span></span>
+                    <span style="font-size: 12px;">${config.sensitive ? '🔒' : ''}</span>
+                </div>
+            `).join('');
+        }
+        
+        if (skipFields.length > 0) {
+            html += `
+                <div class="skip-fields-list">
+                    <h5>Skip Fields:</h5>
+                    ${skipFields.map(field => `<span class="skip-field-tag">${field}</span>`).join('')}
+                </div>
+            `;
+        }
+        
+        return html;
+    }
+
+    setupRulesEventListeners() {
+        // Refresh site rules
+        document.getElementById('refreshSiteRules')?.addEventListener('click', () => {
+            this.getCurrentSiteRules();
+        });
+
+        // Add custom rule
+        document.getElementById('addCustomRule')?.addEventListener('click', () => {
+            this.showCustomRuleDialog();
+        });
+
+        // Remove custom rules
+        document.querySelectorAll('.remove-rule').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const pattern = e.target.dataset.pattern;
+                this.removeCustomRule(pattern);
+            });
+        });
+
+        // Edit custom rules
+        document.querySelectorAll('.edit-rule').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const pattern = e.target.dataset.pattern;
+                this.showCustomRuleDialog(pattern, this.customRules.get(pattern));
+            });
+        });
+
+        // Template usage
+        document.querySelectorAll('.use-template-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const template = e.target.dataset.template;
+                this.useRuleTemplate(template);
+            });
+        });
+
+        // Import/Export rules
+        document.getElementById('exportRules')?.addEventListener('click', () => {
+            this.exportSiteRules();
+        });
+
+        document.getElementById('importRulesBtn')?.addEventListener('click', () => {
+            document.getElementById('importRules').click();
+        });
+
+        document.getElementById('importRules')?.addEventListener('change', (e) => {
+            this.importSiteRules(e);
+        });
+    }
+
+    showCustomRuleDialog(pattern = '', existingRules = null) {
+        const dialog = document.createElement('div');
+        dialog.className = 'modal';
+        dialog.style.display = 'flex';
+
+        const isEdit = pattern !== '';
+        const rules = existingRules || { fields: {}, skipFields: [], enabled: true };
+
+        dialog.innerHTML = `
+            <div class="modal-content" style="min-width: 500px; max-width: 600px;">
+                <h3>${isEdit ? 'Edit' : 'Add'} Site Rule</h3>
+                
+                <div class="form-group">
+                    <label>Site Pattern (e.g., amazon.com, *.google.com)</label>
+                    <input type="text" id="rulePattern" value="${pattern}" placeholder="example.com">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="ruleEnabled" ${rules.enabled ? 'checked' : ''}>
+                        Enable this rule
+                    </label>
+                </div>
+
+                <h4>Field Mappings</h4>
+                <div id="ruleFieldMappings">
+                    ${Object.entries(rules.fields || {}).map(([selector, config]) => `
+                        <div class="rule-field-mapping">
+                            <input type="text" placeholder="CSS selector" value="${selector}">
+                            <select>
+                                ${['firstName', 'lastName', 'fullName', 'email', 'phone', 'street', 'city', 'state', 'zip', 'country', 'cardNumber', 'cvv', 'expiryDate', 'company', 'jobTitle', 'website', 'linkedin']
+                                    .map(type => `<option value="${type}" ${config.type === type ? 'selected' : ''}>${type}</option>`)
+                                    .join('')}
+                            </select>
+                            <button type="button" class="remove-rule-field">×</button>
+                        </div>
+                    `).join('')}
+                </div>
+                <button type="button" class="add-rule-field" id="addRuleField">+ Add Field</button>
+
+                <h4>Skip Fields (CSS selectors to ignore)</h4>
+                <textarea id="skipFields" placeholder="input[type=password]&#10;.captcha&#10;#security-code" rows="3">${(rules.skipFields || []).join('\\n')}</textarea>
+
+                <div class="modal-actions">
+                    <button id="cancelRule" class="btn btn-secondary">Cancel</button>
+                    <button id="saveRule" class="btn btn-primary">Save Rule</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(dialog);
+
+        // Event listeners for the dialog
+        dialog.querySelector('#cancelRule').onclick = () => {
+            document.body.removeChild(dialog);
+        };
+
+        dialog.querySelector('#addRuleField').onclick = () => {
+            const container = dialog.querySelector('#ruleFieldMappings');
+            const newMapping = document.createElement('div');
+            newMapping.className = 'rule-field-mapping';
+            newMapping.innerHTML = `
+                <input type="text" placeholder="CSS selector">
+                <select>
+                    ${['firstName', 'lastName', 'fullName', 'email', 'phone', 'street', 'city', 'state', 'zip', 'country', 'cardNumber', 'cvv', 'expiryDate', 'company', 'jobTitle', 'website', 'linkedin']
+                        .map(type => `<option value="${type}">${type}</option>`)
+                        .join('')}
+                </select>
+                <button type="button" class="remove-rule-field">×</button>
+            `;
+            container.appendChild(newMapping);
+            
+            newMapping.querySelector('.remove-rule-field').onclick = () => {
+                container.removeChild(newMapping);
+            };
+        };
+
+        // Remove field buttons
+        dialog.querySelectorAll('.remove-rule-field').forEach(btn => {
+            btn.onclick = () => {
+                btn.parentElement.remove();
+            };
+        });
+
+        dialog.querySelector('#saveRule').onclick = () => {
+            this.saveCustomRule(dialog, isEdit ? pattern : null);
+            document.body.removeChild(dialog);
+        };
+    }
+
+    saveCustomRule(dialog, originalPattern) {
+        const pattern = dialog.querySelector('#rulePattern').value.trim();
+        const enabled = dialog.querySelector('#ruleEnabled').checked;
+        const skipFieldsText = dialog.querySelector('#skipFields').value;
+        
+        if (!pattern) {
+            this.showMessage('Site pattern is required', 'error');
+            return;
+        }
+
+        const fields = {};
+        dialog.querySelectorAll('#ruleFieldMappings .rule-field-mapping').forEach(mapping => {
+            const selector = mapping.querySelector('input').value.trim();
+            const type = mapping.querySelector('select').value;
+            
+            if (selector && type) {
+                fields[selector] = { type, priority: 'medium' };
+            }
+        });
+
+        const skipFields = skipFieldsText
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line);
+
+        const ruleData = {
+            enabled,
+            fields,
+            skipFields
+        };
+
+        // Remove old pattern if editing
+        if (originalPattern && originalPattern !== pattern) {
+            this.customRules.delete(originalPattern);
+        }
+
+        this.customRules.set(pattern, ruleData);
+        this.saveCustomRulesToStorage();
+        this.renderCustomRules();
+        
+        this.showMessage(`Rule ${originalPattern ? 'updated' : 'added'} successfully`, 'success');
+    }
+
+    async saveCustomRulesToStorage() {
+        try {
+            const customRulesObj = Object.fromEntries(this.customRules);
+            await chrome.storage.sync.set({ customSiteRules: customRulesObj });
+        } catch (error) {
+            console.error('Error saving custom rules:', error);
+            this.showMessage('Error saving rules', 'error');
+        }
+    }
+
+    removeCustomRule(pattern) {
+        if (confirm(`Remove rule for "${pattern}"?`)) {
+            this.customRules.delete(pattern);
+            this.saveCustomRulesToStorage();
+            this.renderCustomRules();
+            this.showMessage('Rule removed successfully', 'success');
+        }
+    }
+
+    useRuleTemplate(templateName) {
+        const templates = {
+            ecommerce: {
+                pattern: '*.com',
+                rules: {
+                    enabled: true,
+                    fields: {
+                        'input[name*="email"]': { type: 'email', priority: 'high' },
+                        'input[name*="firstName"]': { type: 'firstName', priority: 'high' },
+                        'input[name*="lastName"]': { type: 'lastName', priority: 'high' },
+                        'input[name*="address"]': { type: 'street', priority: 'high' },
+                        'input[name*="city"]': { type: 'city', priority: 'high' },
+                        'input[name*="state"]': { type: 'state', priority: 'high' },
+                        'input[name*="zip"]': { type: 'zip', priority: 'high' }
+                    },
+                    skipFields: ['input[type="password"]', 'input[name*="card"]', 'input[name*="cvv"]']
+                }
+            },
+            job: {
+                pattern: '*.com',
+                rules: {
+                    enabled: true,
+                    fields: {
+                        'input[name*="firstName"]': { type: 'firstName', priority: 'high' },
+                        'input[name*="lastName"]': { type: 'lastName', priority: 'high' },
+                        'input[name*="email"]': { type: 'email', priority: 'high' },
+                        'input[name*="phone"]': { type: 'phone', priority: 'high' },
+                        'input[name*="company"]': { type: 'company', priority: 'high' },
+                        'input[name*="title"]': { type: 'jobTitle', priority: 'high' },
+                        'input[name*="website"]': { type: 'website', priority: 'medium' }
+                    },
+                    skipFields: ['input[type="password"]', 'input[name*="resume"]', 'textarea[name*="cover"]']
+                }
+            },
+            contact: {
+                pattern: '*.com',
+                rules: {
+                    enabled: true,
+                    fields: {
+                        'input[name*="name"]': { type: 'fullName', priority: 'high' },
+                        'input[name*="email"]': { type: 'email', priority: 'high' },
+                        'input[name*="phone"]': { type: 'phone', priority: 'medium' },
+                        'input[name*="company"]': { type: 'company', priority: 'medium' }
+                    },
+                    skipFields: ['textarea[name*="message"]', 'input[name*="subject"]']
+                }
+            }
+        };
+
+        const template = templates[templateName];
+        if (template) {
+            this.showCustomRuleDialog(template.pattern, template.rules);
+        }
+    }
+
+    exportSiteRules() {
+        const exportData = {
+            customRules: Object.fromEntries(this.customRules),
+            exportDate: new Date().toISOString(),
+            version: '1.0'
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pii-autofill-site-rules-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        this.showMessage('Site rules exported successfully!', 'success');
+    }
+
+    async importSiteRules(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        try {
+            const text = await file.text();
+            const importData = JSON.parse(text);
+
+            if (importData.customRules) {
+                Object.entries(importData.customRules).forEach(([pattern, rules]) => {
+                    this.customRules.set(pattern, rules);
+                });
+
+                await this.saveCustomRulesToStorage();
+                this.renderCustomRules();
+                this.showMessage('Site rules imported successfully!', 'success');
+            } else {
+                this.showMessage('Invalid site rules file format', 'error');
+            }
+        } catch (error) {
+            console.error('Error importing site rules:', error);
+            this.showMessage('Error importing site rules. Please check the file format.', 'error');
+        }
+
+        // Clear the file input
+        event.target.value = '';
     }
 }
 
