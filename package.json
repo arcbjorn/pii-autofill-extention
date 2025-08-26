@@ -10,7 +10,8 @@
     "copy-files": "mkdir -p dist && cp -r src/* dist/ && cp manifest.json dist/",
     "clean": "rm -rf dist/*",
     "watch": "pnpm run dev",
-    "install": "./scripts/install.sh"
+    "install": "./scripts/install.sh",
+    "optimize": "node scripts/optimize.js"
   },
   "keywords": [
     "chrome-extension",
