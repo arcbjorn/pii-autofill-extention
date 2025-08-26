@@ -1,0 +1,30 @@
+{
+  "name": "pii-autofill-extension",
+  "version": "1.0.0",
+  "description": "Chrome extension for PII autofill with intelligent field detection",
+  "main": "dev-server.js",
+  "scripts": {
+    "dev": "node dev-server.js",
+    "start": "npm run dev",
+    "build": "npm run copy-files",
+    "copy-files": "mkdir -p dist && cp -r src/* dist/ && cp manifest.json dist/",
+    "clean": "rm -rf dist/*",
+    "watch": "npm run dev"
+  },
+  "keywords": [
+    "chrome-extension",
+    "autofill",
+    "pii",
+    "form-detection"
+  ],
+  "author": "Developer",
+  "license": "MIT",
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "ws": "^8.14.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
