@@ -9,7 +9,8 @@
     "build": "pnpm run copy-files",
     "copy-files": "mkdir -p dist && cp -r src/* dist/ && cp manifest.json dist/",
     "clean": "rm -rf dist/*",
-    "watch": "pnpm run dev"
+    "watch": "pnpm run dev",
+    "install": "./install.sh"
   },
   "keywords": [
     "chrome-extension",
