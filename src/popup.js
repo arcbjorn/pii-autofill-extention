@@ -13,6 +13,8 @@ class PopupManager {
         this.detectedFields = [];
         this.siteRules = null;
         this.customRules = new Map();
+        this.devTools = null;
+        this.isDevelopment = false;
         
         this.init();
     }
@@ -25,6 +27,7 @@ class PopupManager {
         this.detectCurrentPageFields();
         this.populateFieldMappings();
         await this.loadSiteRules();
+        this.initDevTools();
     }
 
     async loadProfiles() {
@@ -911,6 +914,323 @@ class PopupManager {
 
         // Clear the file input
         event.target.value = '';
+    }
+
+    // Development Tools
+    initDevTools() {
+        this.isDevelopment = this.checkDevelopmentMode();
+        
+        if (this.isDevelopment) {
+            document.getElementById('devTab').style.display = 'block';
+            this.setupDevTools();
+        }
+    }
+
+    checkDevelopmentMode() {
+        const manifest = chrome.runtime.getManifest();
+        return !manifest.update_url || 
+               manifest.name.includes('Dev') || 
+               window.location.hostname === 'localhost';
+    }
+
+    setupDevTools() {
+        this.devTools = {
+            logs: [],
+            currentStorageTab: 'sync',
+            logFilters: {
+                error: true,
+                warn: true,
+                info: true,
+                debug: false
+            }
+        };
+
+        this.setupDevEventListeners();
+        this.loadExtensionInfo();
+        this.connectToDevClient();
+        this.refreshStorage();
+    }
+
+    setupDevEventListeners() {
+        // Reload extension
+        document.getElementById('reloadExtension')?.addEventListener('click', () => {
+            this.reloadExtension();
+        });
+
+        // Clear logs
+        document.getElementById('clearDevLogs')?.addEventListener('click', () => {
+            this.clearDevLogs();
+        });
+
+        // Download logs
+        document.getElementById('downloadLogs')?.addEventListener('click', () => {
+            this.downloadLogs();
+        });
+
+        // Storage controls
+        document.getElementById('refreshStorage')?.addEventListener('click', () => {
+            this.refreshStorage();
+        });
+
+        document.getElementById('exportStorage')?.addEventListener('click', () => {
+            this.exportStorage();
+        });
+
+        document.getElementById('clearStorage')?.addEventListener('click', () => {
+            this.clearAllStorage();
+        });
+
+        // Storage tabs
+        document.querySelectorAll('.storage-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                this.switchStorageTab(e.target.dataset.storage);
+            });
+        });
+
+        // Log filters
+        ['error', 'warn', 'info', 'debug'].forEach(level => {
+            const checkbox = document.getElementById(`log${level.charAt(0).toUpperCase() + level.slice(1)}`);
+            checkbox?.addEventListener('change', (e) => {
+                this.devTools.logFilters[level] = e.target.checked;
+                this.renderLogs();
+            });
+        });
+    }
+
+    loadExtensionInfo() {
+        const manifest = chrome.runtime.getManifest();
+        
+        document.getElementById('extensionId').textContent = chrome.runtime.id || 'Unknown';
+        document.getElementById('extensionVersion').textContent = manifest.version || 'Unknown';
+        document.getElementById('manifestVersion').textContent = `v${manifest.manifest_version}` || 'Unknown';
+    }
+
+    connectToDevClient() {
+        // Check if dev client is available
+        if (window.devClient) {
+            this.updateDevStatus('🟢 Connected', 'connected');
+            this.loadDevLogs();
+        } else {
+            this.updateDevStatus('🔴 Disconnected', 'disconnected');
+        }
+
+        // Try to connect periodically
+        setInterval(() => {
+            if (window.devClient && !this.devClientConnected) {
+                this.updateDevStatus('🟢 Connected', 'connected');
+                this.loadDevLogs();
+                this.devClientConnected = true;
+            } else if (!window.devClient && this.devClientConnected) {
+                this.updateDevStatus('🔴 Disconnected', 'disconnected');
+                this.devClientConnected = false;
+            }
+        }, 2000);
+    }
+
+    updateDevStatus(text, status) {
+        const statusEl = document.getElementById('devStatus');
+        if (statusEl) {
+            statusEl.textContent = text;
+            statusEl.className = `dev-status-indicator connection-status ${status}`;
+        }
+    }
+
+    loadDevLogs() {
+        if (window.devClient && window.devClient.getLogs) {
+            this.devTools.logs = window.devClient.getLogs();
+            this.renderLogs();
+        }
+    }
+
+    renderLogs() {
+        const logsContainer = document.getElementById('devLogs');
+        if (!logsContainer) return;
+
+        const filteredLogs = this.devTools.logs.filter(log => 
+            this.devTools.logFilters[log.level]
+        );
+
+        if (filteredLogs.length === 0) {
+            logsContainer.innerHTML = '<div class="no-logs">No logs to display</div>';
+            return;
+        }
+
+        logsContainer.innerHTML = filteredLogs.map(log => {
+            const timestamp = new Date(log.timestamp).toLocaleTimeString();
+            const source = log.source || 'unknown';
+            
+            return `
+                <div class="log-entry ${log.level}">
+                    <span class="log-timestamp">[${timestamp}]</span>
+                    <span class="log-source">[${source}]</span>
+                    <span class="log-message">${this.escapeHtml(log.message)}</span>
+                    ${log.data ? `<div class="log-data">${this.escapeHtml(JSON.stringify(log.data, null, 2))}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+
+        logsContainer.scrollTop = logsContainer.scrollHeight;
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    clearDevLogs() {
+        this.devTools.logs = [];
+        if (window.devClient && window.devClient.logs) {
+            window.devClient.logs = [];
+        }
+        this.renderLogs();
+    }
+
+    downloadLogs() {
+        if (window.devClient && window.devClient.downloadLogs) {
+            window.devClient.downloadLogs();
+        } else {
+            // Fallback manual download
+            const blob = new Blob([JSON.stringify(this.devTools.logs, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `extension-logs-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    }
+
+    reloadExtension() {
+        if (window.devClient && window.devClient.triggerReload) {
+            window.devClient.triggerReload();
+        } else {
+            chrome.runtime.reload();
+        }
+        
+        document.getElementById('lastReload').textContent = new Date().toLocaleString();
+    }
+
+    async refreshStorage() {
+        try {
+            const [syncData, localData] = await Promise.all([
+                chrome.storage.sync.get(),
+                chrome.storage.local.get()
+            ]);
+
+            this.devTools.storageData = { sync: syncData, local: localData };
+            this.renderStorage();
+        } catch (error) {
+            console.error('Error loading storage:', error);
+        }
+    }
+
+    switchStorageTab(tabName) {
+        document.querySelectorAll('.storage-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        document.querySelector(`[data-storage="${tabName}"]`).classList.add('active');
+        this.devTools.currentStorageTab = tabName;
+        this.renderStorage();
+    }
+
+    renderStorage() {
+        const container = document.getElementById('storageContent');
+        if (!container || !this.devTools.storageData) return;
+
+        const data = this.devTools.storageData[this.devTools.currentStorageTab];
+        
+        if (!data || Object.keys(data).length === 0) {
+            container.innerHTML = '<div style="color: #888; text-align: center; padding: 20px;">No data in ' + this.devTools.currentStorageTab + ' storage</div>';
+            return;
+        }
+
+        container.innerHTML = this.formatStorageData(data);
+    }
+
+    formatStorageData(data, indent = 0) {
+        const indentStr = '  '.repeat(indent);
+        let html = '';
+
+        for (const [key, value] of Object.entries(data)) {
+            html += `<div class="storage-key">${indentStr}${key}:</div>`;
+            
+            if (value === null) {
+                html += `<div class="storage-value storage-null">${indentStr}  null</div>`;
+            } else if (typeof value === 'string') {
+                html += `<div class="storage-value storage-string">${indentStr}  "${this.escapeHtml(value)}"</div>`;
+            } else if (typeof value === 'number') {
+                html += `<div class="storage-value storage-number">${indentStr}  ${value}</div>`;
+            } else if (typeof value === 'boolean') {
+                html += `<div class="storage-value storage-boolean">${indentStr}  ${value}</div>`;
+            } else if (Array.isArray(value)) {
+                html += `<div class="storage-value storage-array">${indentStr}  [${value.length} items]</div>`;
+                if (value.length > 0) {
+                    html += `<div class="storage-object">${this.formatStorageData(
+                        value.reduce((acc, item, index) => ({ ...acc, [index]: item }), {}), 
+                        indent + 1
+                    )}</div>`;
+                }
+            } else if (typeof value === 'object') {
+                const keys = Object.keys(value);
+                html += `<div class="storage-value">${indentStr}  {${keys.length} properties}</div>`;
+                if (keys.length > 0) {
+                    html += `<div class="storage-object">${this.formatStorageData(value, indent + 1)}</div>`;
+                }
+            }
+        }
+
+        return html;
+    }
+
+    async exportStorage() {
+        try {
+            const [syncData, localData] = await Promise.all([
+                chrome.storage.sync.get(),
+                chrome.storage.local.get()
+            ]);
+
+            const storageExport = {
+                sync: syncData,
+                local: localData,
+                exportDate: new Date().toISOString(),
+                extensionId: chrome.runtime.id,
+                version: chrome.runtime.getManifest().version
+            };
+
+            const blob = new Blob([JSON.stringify(storageExport, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `extension-storage-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            this.showMessage('Storage exported successfully', 'success');
+        } catch (error) {
+            console.error('Error exporting storage:', error);
+            this.showMessage('Error exporting storage', 'error');
+        }
+    }
+
+    async clearAllStorage() {
+        if (!confirm('Clear ALL extension storage? This cannot be undone!')) {
+            return;
+        }
+
+        try {
+            await Promise.all([
+                chrome.storage.sync.clear(),
+                chrome.storage.local.clear()
+            ]);
+
+            this.showMessage('All storage cleared', 'success');
+            this.refreshStorage();
+        } catch (error) {
+            console.error('Error clearing storage:', error);
+            this.showMessage('Error clearing storage', 'error');
+        }
     }
 }
 
