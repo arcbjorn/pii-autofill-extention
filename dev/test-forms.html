@@ -3,60 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PII Autofill Extension - Test Forms</title>
+    <title>PII Autofill Extension - Advanced Test Forms</title>
+    
+    <!-- React and Babel for JSX -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Axios for AJAX -->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2196F3;
+            --warning-color: #ff9800;
+            --error-color: #f44336;
+            --background-color: #f5f5f5;
+            --card-background: white;
+            --border-color: #ddd;
+            --text-color: #333;
+            --muted-color: #666;
         }
 
-        .form-section {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        h2 {
-            color: #666;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: #555;
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
+        * {
             box-sizing: border-box;
         }
 
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: #4CAF50;
-            box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--text-color);
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+
+        .test-section {
+            background: var(--card-background);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .test-section h2 {
+            color: var(--text-color);
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .test-info {
+            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+            border-left: 4px solid var(--secondary-color);
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .test-info h4 {
+            margin: 0 0 10px 0;
+            color: var(--secondary-color);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin: 20px 0;
+        }
+
+        .form-card {
+            background: #fafafa;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
         }
 
         .form-row {
@@ -68,358 +107,1196 @@
             flex: 1;
         }
 
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-color);
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+
         button {
-            background: #4CAF50;
+            background: var(--primary-color);
             color: white;
             border: none;
             padding: 12px 24px;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 5px;
         }
 
         button:hover {
             background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
-        .test-info {
-            background: #e3f2fd;
-            border: 1px solid #2196f3;
+        button.secondary {
+            background: var(--secondary-color);
+        }
+
+        button.secondary:hover {
+            background: #1976d2;
+        }
+
+        button.warning {
+            background: var(--warning-color);
+        }
+
+        button.warning:hover {
+            background: #f57c00;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .step.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .step.completed {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        .ajax-status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .ajax-status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .ajax-status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .ajax-status.loading {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .react-form {
+            background: #f8f9fa;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .shadow-host {
+            padding: 20px;
+            border: 2px dashed var(--secondary-color);
+            border-radius: 8px;
+            background: #f0f7ff;
+        }
+
+        .iframe-container {
+            border: 2px solid var(--warning-color);
+            border-radius: 8px;
+            overflow: hidden;
+            background: #fff3e0;
+        }
+
+        .iframe-container iframe {
+            width: 100%;
+            height: 400px;
+            border: none;
+        }
+
+        .sensitive-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
             border-radius: 4px;
             padding: 10px;
-            margin-bottom: 20px;
-            font-size: 14px;
+            margin: 10px 0;
+            color: #856404;
         }
 
-        .sensitive-field {
-            background: #fff3e0;
-            border: 1px solid #ff9800;
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .form-analytics {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
             border-radius: 4px;
             padding: 15px;
-            margin: 10px 0;
+            margin: 20px 0;
         }
 
-        .sensitive-field h3 {
-            margin-top: 0;
-            color: #f57c00;
+        .form-analytics h4 {
+            margin: 0 0 10px 0;
+            color: #2e7d32;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 2px;
         }
     </style>
 </head>
 <body>
-    <h1>🧪 PII Autofill Extension - Test Forms</h1>
-    
-    <div class="test-info">
-        <strong>Testing Instructions:</strong>
-        <ol>
-            <li>Install the PII Autofill Extension</li>
-            <li>Fill out your profile information in the extension popup</li>
-            <li>Use the extension's "Detect Fields" button or context menu to autofill these forms</li>
-            <li>Test different field detection and autofill scenarios</li>
-        </ol>
-    </div>
-
-    <!-- Personal Information Form -->
-    <div class="form-section">
-        <h2>👤 Personal Information Form</h2>
-        <form id="personalForm">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="first_name">First Name</label>
-                    <input type="text" id="first_name" name="first_name" placeholder="Enter your first name">
-                </div>
-                <div class="form-group">
-                    <label for="last_name">Last Name</label>
-                    <input type="text" id="last_name" name="last_name" placeholder="Enter your last name">
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="email_address">Email Address</label>
-                <input type="email" id="email_address" name="email" placeholder="your.email@example.com">
-            </div>
-            
-            <div class="form-group">
-                <label for="phone_number">Phone Number</label>
-                <input type="tel" id="phone_number" name="phone" placeholder="+1 (555) 123-4567">
-            </div>
-            
-            <div class="form-group">
-                <label for="date_of_birth">Date of Birth</label>
-                <input type="date" id="date_of_birth" name="dob">
-            </div>
-            
-            <button type="submit">Submit Personal Info</button>
-        </form>
-    </div>
-
-    <!-- Address Information Form -->
-    <div class="form-section">
-        <h2>🏠 Address Information Form</h2>
-        <form id="addressForm">
-            <div class="form-group">
-                <label for="street_address">Street Address</label>
-                <input type="text" id="street_address" name="address" placeholder="123 Main Street">
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="city">City</label>
-                    <input type="text" id="city" name="city" placeholder="New York">
-                </div>
-                <div class="form-group">
-                    <label for="state">State/Province</label>
-                    <input type="text" id="state" name="state" placeholder="NY">
-                </div>
-                <div class="form-group">
-                    <label for="postal_code">ZIP/Postal Code</label>
-                    <input type="text" id="postal_code" name="zip" placeholder="10001">
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label for="country">Country</label>
-                <select id="country" name="country">
-                    <option value="">Select Country</option>
-                    <option value="US">United States</option>
-                    <option value="CA">Canada</option>
-                    <option value="UK">United Kingdom</option>
-                    <option value="AU">Australia</option>
-                </select>
-            </div>
-            
-            <button type="submit">Submit Address</button>
-        </form>
-    </div>
-
-    <!-- Work Information Form -->
-    <div class="form-section">
-        <h2>💼 Professional Information Form</h2>
-        <form id="workForm">
-            <div class="form-group">
-                <label for="company_name">Company Name</label>
-                <input type="text" id="company_name" name="company" placeholder="Acme Corporation">
-            </div>
-            
-            <div class="form-group">
-                <label for="job_title">Job Title</label>
-                <input type="text" id="job_title" name="title" placeholder="Software Engineer">
-            </div>
-            
-            <div class="form-group">
-                <label for="work_email">Work Email</label>
-                <input type="email" id="work_email" name="work_email" placeholder="john@company.com">
-            </div>
-            
-            <div class="form-group">
-                <label for="work_phone">Work Phone</label>
-                <input type="tel" id="work_phone" name="work_phone" placeholder="+1 (555) 987-6543">
-            </div>
-            
-            <div class="form-group">
-                <label for="linkedin">LinkedIn Profile</label>
-                <input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/username">
-            </div>
-            
-            <button type="submit">Submit Work Info</button>
-        </form>
-    </div>
-
-    <!-- Payment Form (Sensitive) -->
-    <div class="form-section">
-        <div class="sensitive-field">
-            <h3>⚠️ Sensitive Payment Information</h3>
-            <p><strong>Note:</strong> This form contains sensitive fields that should be encrypted by the extension.</p>
+    <div class="container">
+        <h1>🧪 Advanced Extension Test Suite</h1>
+        
+        <div class="test-info">
+            <h4>🎯 Testing Objectives</h4>
+            <p>This comprehensive test suite validates the PII Autofill Extension across different form implementations, DOM structures, and dynamic scenarios commonly found in modern web applications.</p>
+            <ul>
+                <li><strong>Detection Accuracy:</strong> Test field recognition across naming conventions</li>
+                <li><strong>DOM Compatibility:</strong> Verify functionality in various DOM environments</li>
+                <li><strong>Dynamic Handling:</strong> Test real-time form changes and AJAX updates</li>
+                <li><strong>Framework Support:</strong> Validate React and other framework compatibility</li>
+            </ul>
         </div>
-        
-        <h2>💳 Payment Information Form</h2>
-        <form id="paymentForm">
-            <div class="form-group">
-                <label for="card_number">Credit Card Number</label>
-                <input type="text" id="card_number" name="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19">
+
+        <!-- Standard HTML Forms Section -->
+        <div class="test-section">
+            <h2>📝 Standard HTML Forms</h2>
+            <div class="test-info">
+                <h4>Standard Form Testing</h4>
+                <p>Traditional HTML forms with various field types, naming conventions, and validation patterns.</p>
             </div>
             
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="expiry_month">Expiry Month</label>
-                    <select id="expiry_month" name="exp_month">
-                        <option value="">Month</option>
-                        <option value="01">01</option>
-                        <option value="02">02</option>
-                        <option value="03">03</option>
-                        <option value="04">04</option>
-                        <option value="05">05</option>
-                        <option value="06">06</option>
-                        <option value="07">07</option>
-                        <option value="08">08</option>
-                        <option value="09">09</option>
-                        <option value="10">10</option>
-                        <option value="11">11</option>
-                        <option value="12">12</option>
-                    </select>
+            <div class="form-grid">
+                <!-- Contact Form -->
+                <div class="form-card">
+                    <h3>Contact Information Form</h3>
+                    <form id="contactForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="contact_first_name">First Name</label>
+                                <input type="text" id="contact_first_name" name="firstName" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="contact_last_name">Last Name</label>
+                                <input type="text" id="contact_last_name" name="lastName" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="contact_email">Email Address</label>
+                            <input type="email" id="contact_email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contact_phone">Phone Number</label>
+                            <input type="tel" id="contact_phone" name="phone">
+                        </div>
+                        <button type="submit">Submit Contact</button>
+                    </form>
                 </div>
-                <div class="form-group">
-                    <label for="expiry_year">Expiry Year</label>
-                    <select id="expiry_year" name="exp_year">
-                        <option value="">Year</option>
-                        <option value="2024">2024</option>
-                        <option value="2025">2025</option>
-                        <option value="2026">2026</option>
-                        <option value="2027">2027</option>
-                        <option value="2028">2028</option>
-                        <option value="2029">2029</option>
-                    </select>
+
+                <!-- Registration Form -->
+                <div class="form-card">
+                    <h3>User Registration Form</h3>
+                    <form id="registrationForm">
+                        <div class="form-group">
+                            <label for="reg_username">Username</label>
+                            <input type="text" id="reg_username" name="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reg_email">Email</label>
+                            <input type="email" id="reg_email" name="email" autocomplete="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reg_password">Password</label>
+                            <input type="password" id="reg_password" name="password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reg_confirm_password">Confirm Password</label>
+                            <input type="password" id="reg_confirm_password" name="confirmPassword" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reg_birthdate">Date of Birth</label>
+                            <input type="date" id="reg_birthdate" name="birthdate">
+                        </div>
+                        <button type="submit">Register Account</button>
+                    </form>
                 </div>
-                <div class="form-group">
-                    <label for="cvv">CVV</label>
-                    <input type="text" id="cvv" name="cvv" placeholder="123" maxlength="4">
+
+                <!-- Address Form -->
+                <div class="form-card">
+                    <h3>Shipping Address Form</h3>
+                    <form id="addressForm">
+                        <div class="form-group">
+                            <label for="ship_address1">Address Line 1</label>
+                            <input type="text" id="ship_address1" name="address1" autocomplete="address-line1">
+                        </div>
+                        <div class="form-group">
+                            <label for="ship_address2">Address Line 2</label>
+                            <input type="text" id="ship_address2" name="address2" autocomplete="address-line2">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="ship_city">City</label>
+                                <input type="text" id="ship_city" name="city" autocomplete="address-level2">
+                            </div>
+                            <div class="form-group">
+                                <label for="ship_state">State</label>
+                                <select id="ship_state" name="state" autocomplete="address-level1">
+                                    <option value="">Select State</option>
+                                    <option value="CA">California</option>
+                                    <option value="NY">New York</option>
+                                    <option value="TX">Texas</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="ship_zip">ZIP Code</label>
+                                <input type="text" id="ship_zip" name="zip" autocomplete="postal-code">
+                            </div>
+                        </div>
+                        <button type="submit">Save Address</button>
+                    </form>
+                </div>
+
+                <!-- Payment Form -->
+                <div class="form-card">
+                    <div class="sensitive-warning">
+                        ⚠️ <strong>Sensitive Data:</strong> This form contains payment fields that should be encrypted.
+                    </div>
+                    <h3>Payment Information Form</h3>
+                    <form id="paymentForm">
+                        <div class="form-group">
+                            <label for="card_number">Card Number</label>
+                            <input type="text" id="card_number" name="cardNumber" autocomplete="cc-number" maxlength="19">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="card_expiry">Expiry Date</label>
+                                <input type="text" id="card_expiry" name="expiry" autocomplete="cc-exp" placeholder="MM/YY">
+                            </div>
+                            <div class="form-group">
+                                <label for="card_cvv">CVV</label>
+                                <input type="text" id="card_cvv" name="cvv" autocomplete="cc-csc" maxlength="4">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="cardholder_name">Cardholder Name</label>
+                            <input type="text" id="cardholder_name" name="cardholderName" autocomplete="cc-name">
+                        </div>
+                        <button type="submit">Process Payment</button>
+                    </form>
                 </div>
             </div>
-            
-            <div class="form-group">
-                <label for="cardholder_name">Cardholder Name</label>
-                <input type="text" id="cardholder_name" name="cardName" placeholder="John Doe">
-            </div>
-            
-            <button type="submit">Submit Payment Info</button>
-        </form>
-    </div>
+        </div>
 
-    <!-- Alternative Field Names Test -->
-    <div class="form-section">
-        <h2>🔍 Alternative Field Names Test</h2>
-        <p>This form uses different field naming conventions to test the extension's detection capabilities.</p>
-        
-        <form id="altFieldsForm">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="fname">First Name (fname)</label>
-                    <input type="text" id="fname" name="fname">
-                </div>
-                <div class="form-group">
-                    <label for="lname">Last Name (lname)</label>
-                    <input type="text" id="lname" name="lname">
-                </div>
+        <!-- React Forms Section -->
+        <div class="test-section">
+            <h2>⚛️ React Form Components</h2>
+            <div class="test-info">
+                <h4>React Framework Testing</h4>
+                <p>Forms built with React components to test extension compatibility with virtual DOM and JSX rendering.</p>
             </div>
             
-            <div class="form-group">
-                <label for="email_addr">Email (email_addr)</label>
-                <input type="email" id="email_addr" name="email_addr">
+            <div id="react-forms-container" class="react-form">
+                <!-- React components will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Dynamic AJAX Forms Section -->
+        <div class="test-section">
+            <h2>🔄 Dynamic AJAX Forms</h2>
+            <div class="test-info">
+                <h4>AJAX Form Testing</h4>
+                <p>Forms that load dynamically via AJAX requests and update without page refresh. Tests real-time DOM manipulation detection.</p>
             </div>
             
-            <div class="form-group">
-                <label for="tel">Telephone (tel)</label>
-                <input type="tel" id="tel" name="tel">
-            </div>
-            
-            <div class="form-group">
-                <label for="addr1">Address Line 1 (addr1)</label>
-                <input type="text" id="addr1" name="addr1">
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="locality">City (locality)</label>
-                    <input type="text" id="locality" name="locality">
+            <div class="form-grid">
+                <div class="form-card">
+                    <h3>Load Dynamic Form</h3>
+                    <button onclick="loadAjaxForm('user')" class="secondary">Load User Form</button>
+                    <button onclick="loadAjaxForm('company')" class="secondary">Load Company Form</button>
+                    <button onclick="loadAjaxForm('mixed')" class="secondary">Load Mixed Form</button>
+                    
+                    <div id="ajax-status" class="ajax-status"></div>
+                    <div id="ajax-form-container"></div>
                 </div>
-                <div class="form-group">
-                    <label for="region">State (region)</label>
-                    <input type="text" id="region" name="region">
-                </div>
-                <div class="form-group">
-                    <label for="postal">ZIP (postal)</label>
-                    <input type="text" id="postal" name="postal">
+                
+                <div class="form-card">
+                    <h3>Real-time Field Addition</h3>
+                    <form id="dynamicFieldsForm">
+                        <div class="form-group">
+                            <label for="base_name">Name (Always Present)</label>
+                            <input type="text" id="base_name" name="name">
+                        </div>
+                        <div id="dynamic-fields-container"></div>
+                        <button type="button" onclick="addField('email')">+ Add Email</button>
+                        <button type="button" onclick="addField('phone')">+ Add Phone</button>
+                        <button type="button" onclick="addField('address')">+ Add Address</button>
+                        <button type="submit">Submit Dynamic Form</button>
+                    </form>
                 </div>
             </div>
+        </div>
+
+        <!-- Multi-step Forms Section -->
+        <div class="test-section">
+            <h2>📊 Multi-step Forms</h2>
+            <div class="test-info">
+                <h4>Multi-step Form Testing</h4>
+                <p>Complex forms broken into multiple steps to test field detection across different form states and progressive disclosure.</p>
+            </div>
             
-            <button type="submit">Submit Alternative Fields</button>
-        </form>
-    </div>
-
-    <!-- Dynamic Form Test -->
-    <div class="form-section">
-        <h2>⚡ Dynamic Form Test</h2>
-        <p>This section tests the extension's ability to detect dynamically added fields.</p>
-        
-        <button onclick="addDynamicFields()">Add Dynamic Fields</button>
-        <div id="dynamicFieldsContainer"></div>
-    </div>
-
-    <script>
-        // Form submission handlers
-        document.getElementById('personalForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            alert('Personal form submitted! (Prevented for testing)');
-        });
-
-        document.getElementById('addressForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            alert('Address form submitted! (Prevented for testing)');
-        });
-
-        document.getElementById('workForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            alert('Work form submitted! (Prevented for testing)');
-        });
-
-        document.getElementById('paymentForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            alert('Payment form submitted! (Prevented for testing)');
-        });
-
-        document.getElementById('altFieldsForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            alert('Alternative fields form submitted! (Prevented for testing)');
-        });
-
-        // Dynamic field addition
-        function addDynamicFields() {
-            const container = document.getElementById('dynamicFieldsContainer');
+            <div class="step-indicator">
+                <div class="step active" data-step="1">1</div>
+                <div class="step" data-step="2">2</div>
+                <div class="step" data-step="3">3</div>
+                <div class="step" data-step="4">4</div>
+            </div>
             
-            if (container.children.length > 0) {
-                container.innerHTML = '';
-                return;
-            }
-
-            container.innerHTML = `
-                <form id="dynamicForm" style="margin-top: 20px;">
-                    <div class="form-group">
-                        <label for="dynamic_name">Full Name (Dynamic)</label>
-                        <input type="text" id="dynamic_name" name="fullName" placeholder="Enter full name">
+            <form id="multiStepForm">
+                <!-- Step 1: Personal Info -->
+                <div class="step-content active" data-step="1">
+                    <h3>Step 1: Personal Information</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ms_first_name">First Name</label>
+                            <input type="text" id="ms_first_name" name="firstName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="ms_last_name">Last Name</label>
+                            <input type="text" id="ms_last_name" name="lastName" required>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label for="dynamic_email">Email (Dynamic)</label>
-                        <input type="email" id="dynamic_email" name="emailAddress" placeholder="Enter email">
+                        <label for="ms_email">Email Address</label>
+                        <input type="email" id="ms_email" name="email" required>
                     </div>
                     <div class="form-group">
-                        <label for="dynamic_company">Company (Dynamic)</label>
-                        <input type="text" id="dynamic_company" name="companyName" placeholder="Enter company">
+                        <label for="ms_phone">Phone Number</label>
+                        <input type="tel" id="ms_phone" name="phone">
                     </div>
-                    <button type="submit">Submit Dynamic Form</button>
-                </form>
-            `;
+                    <button type="button" onclick="nextStep()">Next →</button>
+                </div>
 
-            document.getElementById('dynamicForm').addEventListener('submit', (e) => {
-                e.preventDefault();
-                alert('Dynamic form submitted! (Prevented for testing)');
+                <!-- Step 2: Address -->
+                <div class="step-content" data-step="2">
+                    <h3>Step 2: Address Information</h3>
+                    <div class="form-group">
+                        <label for="ms_street">Street Address</label>
+                        <input type="text" id="ms_street" name="street">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ms_city">City</label>
+                            <input type="text" id="ms_city" name="city">
+                        </div>
+                        <div class="form-group">
+                            <label for="ms_state">State</label>
+                            <input type="text" id="ms_state" name="state">
+                        </div>
+                        <div class="form-group">
+                            <label for="ms_zip">ZIP</label>
+                            <input type="text" id="ms_zip" name="zip">
+                        </div>
+                    </div>
+                    <button type="button" onclick="prevStep()">← Previous</button>
+                    <button type="button" onclick="nextStep()">Next →</button>
+                </div>
+
+                <!-- Step 3: Work Info -->
+                <div class="step-content" data-step="3">
+                    <h3>Step 3: Work Information</h3>
+                    <div class="form-group">
+                        <label for="ms_company">Company</label>
+                        <input type="text" id="ms_company" name="company">
+                    </div>
+                    <div class="form-group">
+                        <label for="ms_title">Job Title</label>
+                        <input type="text" id="ms_title" name="title">
+                    </div>
+                    <div class="form-group">
+                        <label for="ms_work_email">Work Email</label>
+                        <input type="email" id="ms_work_email" name="workEmail">
+                    </div>
+                    <button type="button" onclick="prevStep()">← Previous</button>
+                    <button type="button" onclick="nextStep()">Next →</button>
+                </div>
+
+                <!-- Step 4: Review -->
+                <div class="step-content" data-step="4">
+                    <h3>Step 4: Review & Submit</h3>
+                    <div class="form-analytics">
+                        <h4>Form Completion Analytics</h4>
+                        <div id="completion-stats">
+                            <span class="badge">Fields Detected: <span id="fields-detected">0</span></span>
+                            <span class="badge">Fields Filled: <span id="fields-filled">0</span></span>
+                            <span class="badge">Completion: <span id="completion-percentage">0%</span></span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="prevStep()">← Previous</button>
+                    <button type="submit">Submit Form</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Shadow DOM Forms Section -->
+        <div class="test-section">
+            <h2>🌑 Shadow DOM Forms</h2>
+            <div class="test-info">
+                <h4>Shadow DOM Testing</h4>
+                <p>Forms encapsulated within Shadow DOM to test extension capability to penetrate shadow boundaries and detect isolated form elements.</p>
+            </div>
+            
+            <div class="shadow-host" id="shadow-host-1">
+                <h4>Shadow DOM Host #1</h4>
+                <p>Form will be rendered inside shadow root...</p>
+            </div>
+            
+            <div class="shadow-host" id="shadow-host-2">
+                <h4>Shadow DOM Host #2</h4>
+                <p>Nested shadow DOM form will be rendered here...</p>
+            </div>
+        </div>
+
+        <!-- Iframe Embedded Forms Section -->
+        <div class="test-section">
+            <h2>🖼️ Iframe Embedded Forms</h2>
+            <div class="test-info">
+                <h4>Cross-Frame Testing</h4>
+                <p>Forms embedded within iframes to test extension's ability to detect and fill forms across different browsing contexts.</p>
+            </div>
+            
+            <div class="form-grid">
+                <div class="iframe-container">
+                    <h4>Same-Origin Iframe Form</h4>
+                    <iframe id="same-origin-iframe" data-form-type="contact"></iframe>
+                </div>
+                
+                <div class="iframe-container">
+                    <h4>Dynamic Iframe Form</h4>
+                    <button onclick="createDynamicIframe()">Create Dynamic Iframe</button>
+                    <div id="dynamic-iframe-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Testing Controls -->
+        <div class="test-section">
+            <h2>🎮 Testing Controls</h2>
+            <div class="form-analytics">
+                <h4>Extension Testing Dashboard</h4>
+                <div style="margin: 20px 0;">
+                    <button onclick="detectAllFields()" class="secondary">🔍 Detect All Fields</button>
+                    <button onclick="fillAllForms()" class="warning">📝 Fill All Forms</button>
+                    <button onclick="clearAllForms()">🧹 Clear All Forms</button>
+                    <button onclick="exportTestResults()">📊 Export Results</button>
+                </div>
+                
+                <div id="test-results">
+                    <h4>Test Results</h4>
+                    <div id="detection-results"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- React Components Script -->
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // React Personal Info Form Component
+        const PersonalInfoForm = () => {
+            const [formData, setFormData] = useState({
+                firstName: '',
+                lastName: '',
+                email: '',
+                phone: '',
+                company: '',
+                jobTitle: ''
             });
+            
+            const handleChange = (e) => {
+                setFormData({
+                    ...formData,
+                    [e.target.name]: e.target.value
+                });
+            };
+            
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                alert('React form submitted: ' + JSON.stringify(formData, null, 2));
+            };
+            
+            return (
+                <div style={{marginBottom: '30px'}}>
+                    <h3>React Personal Info Form</h3>
+                    <form onSubmit={handleSubmit}>
+                        <div style={{display: 'flex', gap: '15px', marginBottom: '20px'}}>
+                            <div style={{flex: 1}}>
+                                <label>First Name</label>
+                                <input
+                                    type="text"
+                                    name="firstName"
+                                    value={formData.firstName}
+                                    onChange={handleChange}
+                                    data-testid="react-firstName"
+                                />
+                            </div>
+                            <div style={{flex: 1}}>
+                                <label>Last Name</label>
+                                <input
+                                    type="text"
+                                    name="lastName"
+                                    value={formData.lastName}
+                                    onChange={handleChange}
+                                    data-testid="react-lastName"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div style={{marginBottom: '20px'}}>
+                            <label>Email Address</label>
+                            <input
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                data-testid="react-email"
+                            />
+                        </div>
+                        
+                        <div style={{marginBottom: '20px'}}>
+                            <label>Phone Number</label>
+                            <input
+                                type="tel"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleChange}
+                                data-testid="react-phone"
+                            />
+                        </div>
+                        
+                        <div style={{display: 'flex', gap: '15px', marginBottom: '20px'}}>
+                            <div style={{flex: 1}}>
+                                <label>Company</label>
+                                <input
+                                    type="text"
+                                    name="company"
+                                    value={formData.company}
+                                    onChange={handleChange}
+                                    data-testid="react-company"
+                                />
+                            </div>
+                            <div style={{flex: 1}}>
+                                <label>Job Title</label>
+                                <input
+                                    type="text"
+                                    name="jobTitle"
+                                    value={formData.jobTitle}
+                                    onChange={handleChange}
+                                    data-testid="react-jobTitle"
+                                />
+                            </div>
+                        </div>
+                        
+                        <button type="submit">Submit React Form</button>
+                    </form>
+                </div>
+            );
+        };
+        
+        // React Dynamic Form Component
+        const DynamicReactForm = () => {
+            const [fields, setFields] = useState([
+                { id: 1, type: 'text', name: 'name', label: 'Full Name', value: '' }
+            ]);
+            const [nextId, setNextId] = useState(2);
+            
+            const addField = (fieldType) => {
+                const fieldConfig = {
+                    email: { type: 'email', name: 'email', label: 'Email Address' },
+                    phone: { type: 'tel', name: 'phone', label: 'Phone Number' },
+                    address: { type: 'text', name: 'address', label: 'Address' },
+                    company: { type: 'text', name: 'company', label: 'Company' }
+                };
+                
+                const config = fieldConfig[fieldType];
+                if (config) {
+                    setFields([...fields, { 
+                        id: nextId, 
+                        ...config, 
+                        value: '' 
+                    }]);
+                    setNextId(nextId + 1);
+                }
+            };
+            
+            const updateField = (id, value) => {
+                setFields(fields.map(field => 
+                    field.id === id ? { ...field, value } : field
+                ));
+            };
+            
+            const removeField = (id) => {
+                setFields(fields.filter(field => field.id !== id));
+            };
+            
+            return (
+                <div>
+                    <h3>Dynamic React Form</h3>
+                    <form onSubmit={(e) => { 
+                        e.preventDefault(); 
+                        alert('Dynamic React form submitted!'); 
+                    }}>
+                        {fields.map(field => (
+                            <div key={field.id} style={{marginBottom: '15px', display: 'flex', gap: '10px', alignItems: 'end'}}>
+                                <div style={{flex: 1}}>
+                                    <label>{field.label}</label>
+                                    <input
+                                        type={field.type}
+                                        name={field.name}
+                                        value={field.value}
+                                        onChange={(e) => updateField(field.id, e.target.value)}
+                                        data-testid={`react-dynamic-${field.name}`}
+                                    />
+                                </div>
+                                {field.id > 1 && (
+                                    <button 
+                                        type="button" 
+                                        onClick={() => removeField(field.id)}
+                                        style={{background: '#f44336', marginBottom: 0}}
+                                    >
+                                        ✕
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                        
+                        <div style={{margin: '20px 0'}}>
+                            <button type="button" onClick={() => addField('email')}>+ Email</button>
+                            <button type="button" onClick={() => addField('phone')}>+ Phone</button>
+                            <button type="button" onClick={() => addField('address')}>+ Address</button>
+                            <button type="button" onClick={() => addField('company')}>+ Company</button>
+                        </div>
+                        
+                        <button type="submit">Submit Dynamic Form</button>
+                    </form>
+                </div>
+            );
+        };
+        
+        // Render React components
+        const ReactFormsContainer = () => (
+            <div>
+                <PersonalInfoForm />
+                <DynamicReactForm />
+            </div>
+        );
+        
+        ReactDOM.render(<ReactFormsContainer />, document.getElementById('react-forms-container'));
+    </script>
 
-            // Notify extension about new fields
-            if (window.dispatchEvent) {
-                window.dispatchEvent(new CustomEvent('dynamicContentLoaded'));
+    <!-- Main JavaScript -->
+    <script>
+        // Multi-step form functionality
+        let currentStep = 1;
+        const totalSteps = 4;
+        
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                updateStep(currentStep + 1);
             }
         }
-
-        // Credit card formatting
-        document.getElementById('card_number').addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-            let formattedValue = value.match(/.{1,4}/g)?.join(' ');
-            if (formattedValue) {
-                e.target.value = formattedValue;
+        
+        function prevStep() {
+            if (currentStep > 1) {
+                updateStep(currentStep - 1);
             }
+        }
+        
+        function updateStep(step) {
+            // Hide current step
+            document.querySelector(`.step-content[data-step="${currentStep}"]`).classList.remove('active');
+            document.querySelector(`.step[data-step="${currentStep}"]`).classList.remove('active');
+            
+            // Mark previous steps as completed
+            for (let i = 1; i < step; i++) {
+                document.querySelector(`.step[data-step="${i}"]`).classList.add('completed');
+            }
+            
+            // Show new step
+            currentStep = step;
+            document.querySelector(`.step-content[data-step="${currentStep}"]`).classList.add('active');
+            document.querySelector(`.step[data-step="${currentStep}"]`).classList.add('active');
+            
+            // Update completion stats
+            updateCompletionStats();
+        }
+        
+        function updateCompletionStats() {
+            const allFields = document.querySelectorAll('#multiStepForm input');
+            const filledFields = Array.from(allFields).filter(field => field.value.trim() !== '');
+            const completion = Math.round((filledFields.length / allFields.length) * 100);
+            
+            document.getElementById('fields-detected').textContent = allFields.length;
+            document.getElementById('fields-filled').textContent = filledFields.length;
+            document.getElementById('completion-percentage').textContent = completion + '%';
+        }
+        
+        // AJAX form loading
+        function loadAjaxForm(formType) {
+            const container = document.getElementById('ajax-form-container');
+            const status = document.getElementById('ajax-status');
+            
+            // Show loading
+            status.className = 'ajax-status loading';
+            status.style.display = 'block';
+            status.innerHTML = '<div class="loading-spinner"></div> Loading form...';
+            
+            // Simulate AJAX delay
+            setTimeout(() => {
+                const forms = {
+                    user: `
+                        <h4>User Information Form (AJAX Loaded)</h4>
+                        <form id="ajaxUserForm">
+                            <div style="margin-bottom: 15px;">
+                                <label>Username</label>
+                                <input type="text" name="username" data-ajax-field="username">
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label>Email</label>
+                                <input type="email" name="email" data-ajax-field="email">
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label>Full Name</label>
+                                <input type="text" name="fullName" data-ajax-field="fullName">
+                            </div>
+                            <button type="submit">Submit User Form</button>
+                        </form>
+                    `,
+                    company: `
+                        <h4>Company Information Form (AJAX Loaded)</h4>
+                        <form id="ajaxCompanyForm">
+                            <div style="margin-bottom: 15px;">
+                                <label>Company Name</label>
+                                <input type="text" name="companyName" data-ajax-field="company">
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label>Industry</label>
+                                <input type="text" name="industry" data-ajax-field="industry">
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label>Contact Email</label>
+                                <input type="email" name="contactEmail" data-ajax-field="email">
+                            </div>
+                            <button type="submit">Submit Company Form</button>
+                        </form>
+                    `,
+                    mixed: `
+                        <h4>Mixed Fields Form (AJAX Loaded)</h4>
+                        <form id="ajaxMixedForm">
+                            <div style="margin-bottom: 15px;">
+                                <label>Name</label>
+                                <input type="text" name="name" data-ajax-field="name">
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label>Email Address</label>
+                                <input type="email" name="emailAddr" data-ajax-field="email">
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label>Phone</label>
+                                <input type="tel" name="phoneNumber" data-ajax-field="phone">
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label>Company</label>
+                                <input type="text" name="companyName" data-ajax-field="company">
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label>Street Address</label>
+                                <input type="text" name="streetAddr" data-ajax-field="address">
+                            </div>
+                            <button type="submit">Submit Mixed Form</button>
+                        </form>
+                    `
+                };
+                
+                container.innerHTML = forms[formType] || '<p>Form not found</p>';
+                
+                // Show success
+                status.className = 'ajax-status success';
+                status.innerHTML = `✓ ${formType.charAt(0).toUpperCase() + formType.slice(1)} form loaded successfully`;
+                
+                // Auto-hide status after 3 seconds
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 3000);
+                
+                // Notify extension about new content
+                if (window.dispatchEvent) {
+                    window.dispatchEvent(new CustomEvent('dynamicContentLoaded', {
+                        detail: { formType, timestamp: Date.now() }
+                    }));
+                }
+            }, 1000 + Math.random() * 1000); // Random delay 1-2 seconds
+        }
+        
+        // Dynamic field addition
+        let fieldCounter = 1;
+        function addField(fieldType) {
+            const container = document.getElementById('dynamic-fields-container');
+            
+            const fieldConfigs = {
+                email: { type: 'email', label: 'Email Address', name: 'email' },
+                phone: { type: 'tel', label: 'Phone Number', name: 'phone' },
+                address: { type: 'text', label: 'Address', name: 'address' }
+            };
+            
+            const config = fieldConfigs[fieldType];
+            if (!config) return;
+            
+            const fieldId = `dynamic_${fieldType}_${fieldCounter++}`;
+            const fieldHtml = `
+                <div class="form-group" id="${fieldId}_container">
+                    <label for="${fieldId}">${config.label} (Dynamic)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="${config.type}" id="${fieldId}" name="${config.name}" style="flex: 1;">
+                        <button type="button" onclick="removeField('${fieldId}_container')" style="background: #f44336;">Remove</button>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', fieldHtml);
+            
+            // Notify extension about new field
+            if (window.dispatchEvent) {
+                window.dispatchEvent(new CustomEvent('fieldAdded', {
+                    detail: { fieldType, fieldId, timestamp: Date.now() }
+                }));
+            }
+        }
+        
+        function removeField(containerId) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.remove();
+            }
+        }
+        
+        // Shadow DOM creation
+        function createShadowForms() {
+            // Shadow Host #1 - Simple form
+            const shadowHost1 = document.getElementById('shadow-host-1');
+            const shadowRoot1 = shadowHost1.attachShadow({ mode: 'open' });
+            shadowRoot1.innerHTML = `
+                <style>
+                    form { background: #f0f0f0; padding: 20px; border-radius: 8px; }
+                    .form-group { margin-bottom: 15px; }
+                    label { display: block; margin-bottom: 5px; font-weight: bold; }
+                    input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+                    button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+                </style>
+                <form id="shadowForm1">
+                    <h4>Shadow DOM Form #1</h4>
+                    <div class="form-group">
+                        <label for="shadow1_name">Name</label>
+                        <input type="text" id="shadow1_name" name="name">
+                    </div>
+                    <div class="form-group">
+                        <label for="shadow1_email">Email</label>
+                        <input type="email" id="shadow1_email" name="email">
+                    </div>
+                    <button type="submit">Submit Shadow Form</button>
+                </form>
+            `;
+            
+            // Shadow Host #2 - Nested shadow DOM
+            const shadowHost2 = document.getElementById('shadow-host-2');
+            const shadowRoot2 = shadowHost2.attachShadow({ mode: 'open' });
+            shadowRoot2.innerHTML = `
+                <style>
+                    .nested-container { border: 2px solid #2196F3; padding: 15px; border-radius: 8px; }
+                </style>
+                <div class="nested-container">
+                    <h4>Nested Shadow DOM Container</h4>
+                    <div id="nested-shadow-host"></div>
+                </div>
+            `;
+            
+            const nestedHost = shadowRoot2.getElementById('nested-shadow-host');
+            const nestedShadow = nestedHost.attachShadow({ mode: 'open' });
+            nestedShadow.innerHTML = `
+                <style>
+                    form { background: #e3f2fd; padding: 15px; border-radius: 4px; }
+                    input { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #2196F3; border-radius: 4px; }
+                    button { background: #2196F3; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; }
+                </style>
+                <form id="nestedShadowForm">
+                    <h5>Nested Shadow Form</h5>
+                    <input type="text" name="firstName" placeholder="First Name">
+                    <input type="text" name="lastName" placeholder="Last Name">
+                    <input type="email" name="email" placeholder="Email">
+                    <button type="submit">Submit Nested Form</button>
+                </form>
+            `;
+        }
+        
+        // Iframe creation
+        function createSameOriginIframe() {
+            const iframe = document.getElementById('same-origin-iframe');
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            
+            iframeDoc.open();
+            iframeDoc.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; background: #f9f9f9; }
+                        .form-group { margin-bottom: 15px; }
+                        label { display: block; margin-bottom: 5px; font-weight: bold; }
+                        input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+                        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+                    </style>
+                </head>
+                <body>
+                    <h4>Iframe Contact Form</h4>
+                    <form id="iframeForm">
+                        <div class="form-group">
+                            <label for="iframe_name">Full Name</label>
+                            <input type="text" id="iframe_name" name="name">
+                        </div>
+                        <div class="form-group">
+                            <label for="iframe_email">Email Address</label>
+                            <input type="email" id="iframe_email" name="email">
+                        </div>
+                        <div class="form-group">
+                            <label for="iframe_phone">Phone Number</label>
+                            <input type="tel" id="iframe_phone" name="phone">
+                        </div>
+                        <div class="form-group">
+                            <label for="iframe_message">Message</label>
+                            <textarea id="iframe_message" name="message" rows="3"></textarea>
+                        </div>
+                        <button type="submit">Send Message</button>
+                    </form>
+                    
+                    <script>
+                        document.getElementById('iframeForm').addEventListener('submit', function(e) {
+                            e.preventDefault();
+                            alert('Iframe form submitted!');
+                        });
+                    </script>
+                </body>
+                </html>
+            `);
+            iframeDoc.close();
+        }
+        
+        function createDynamicIframe() {
+            const container = document.getElementById('dynamic-iframe-container');
+            const iframe = document.createElement('iframe');
+            iframe.style.width = '100%';
+            iframe.style.height = '300px';
+            iframe.style.border = 'none';
+            iframe.style.borderRadius = '4px';
+            
+            container.appendChild(iframe);
+            
+            const iframeDoc = iframe.contentDocument;
+            iframeDoc.open();
+            iframeDoc.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 15px; background: #fff; }
+                        input { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ccc; border-radius: 4px; }
+                        button { background: #2196F3; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin: 10px 0; }
+                    </style>
+                </head>
+                <body>
+                    <h4>Dynamic Iframe Form</h4>
+                    <form>
+                        <input type="text" name="dynamicName" placeholder="Name">
+                        <input type="email" name="dynamicEmail" placeholder="Email">
+                        <input type="text" name="dynamicCompany" placeholder="Company">
+                        <button type="submit">Submit Dynamic Form</button>
+                    </form>
+                </body>
+                </html>
+            `);
+            iframeDoc.close();
+        }
+        
+        // Testing utilities
+        function detectAllFields() {
+            const results = document.getElementById('detection-results');
+            const allFields = document.querySelectorAll('input, select, textarea');
+            
+            let html = '<h5>Field Detection Results:</h5><ul>';
+            allFields.forEach((field, index) => {
+                const fieldInfo = {
+                    index: index + 1,
+                    type: field.type,
+                    name: field.name,
+                    id: field.id,
+                    placeholder: field.placeholder,
+                    autocomplete: field.autocomplete,
+                    context: field.closest('form')?.id || 'no-form'
+                };
+                html += `<li><strong>Field ${fieldInfo.index}:</strong> ${JSON.stringify(fieldInfo)}</li>`;
+            });
+            html += '</ul>';
+            
+            results.innerHTML = html;
+        }
+        
+        function fillAllForms() {
+            // This would normally be handled by the extension
+            alert('Fill All Forms clicked - Extension should handle this action');
+        }
+        
+        function clearAllForms() {
+            const allFields = document.querySelectorAll('input, select, textarea');
+            allFields.forEach(field => {
+                if (field.type !== 'submit' && field.type !== 'button') {
+                    field.value = '';
+                }
+            });
+            
+            // Clear React forms by dispatching events
+            const reactFields = document.querySelectorAll('[data-testid]');
+            reactFields.forEach(field => {
+                field.value = '';
+                field.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+            
+            alert('All forms cleared!');
+        }
+        
+        function exportTestResults() {
+            const results = {
+                timestamp: new Date().toISOString(),
+                totalFields: document.querySelectorAll('input, select, textarea').length,
+                forms: {
+                    standard: document.querySelectorAll('form:not([id*="react"]):not([id*="shadow"])').length,
+                    react: document.querySelectorAll('[data-testid]').length,
+                    ajax: document.querySelectorAll('[data-ajax-field]').length,
+                    multiStep: 1,
+                    shadow: 2,
+                    iframe: document.querySelectorAll('iframe').length
+                },
+                userAgent: navigator.userAgent,
+                url: window.location.href
+            };
+            
+            const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `test-results-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Form submission handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            // Standard form handlers
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const formData = new FormData(form);
+                    const data = Object.fromEntries(formData.entries());
+                    console.log('Form submitted:', form.id, data);
+                    alert(`${form.id || 'Form'} submitted successfully!\n\nData: ${JSON.stringify(data, null, 2)}`);
+                });
+            });
+            
+            // Initialize Shadow DOM forms
+            createShadowForms();
+            
+            // Initialize same-origin iframe
+            setTimeout(createSameOriginIframe, 100);
+            
+            // Update multi-step completion stats
+            setInterval(updateCompletionStats, 1000);
+            
+            console.log('🧪 Advanced Test Forms loaded successfully!');
+            console.log('📊 Total forms available:', document.querySelectorAll('form').length);
         });
-
-        console.log('🧪 Test forms page loaded. Ready for extension testing!');
+        
+        // Extension communication
+        window.addEventListener('message', function(event) {
+            console.log('Test page received message:', event.data);
+        });
+        
+        // Custom events for extension testing
+        window.dispatchEvent(new CustomEvent('testPageReady', {
+            detail: {
+                totalForms: document.querySelectorAll('form').length,
+                totalFields: document.querySelectorAll('input, select, textarea').length,
+                timestamp: Date.now()
+            }
+        }));
     </script>
 </body>
 </html>
