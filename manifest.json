@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "PII Autofill Extension",
+  "version": "1.0.0",
+  "description": "Chrome extension for autofilling personal information",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "contextMenus"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"]
+    }
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_title": "PII Autofill"
+  },
+  "commands": {
+    "autofill": {
+      "suggested_key": {
+        "default": "Alt+Shift+F"
+      },
+      "description": "Trigger autofill"
+    }
+  }
+}
