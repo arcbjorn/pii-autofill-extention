@@ -31,7 +31,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["src/enhanced-detection.js"],
+      "resources": ["src/enhanced-detection.js", "src/site-rules.js"],
       "matches": ["<all_urls>"]
     }
   ]
