@@ -28,5 +28,11 @@
       },
       "description": "Trigger autofill"
     }
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["src/enhanced-detection.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
