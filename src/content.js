@@ -1,10 +1,14 @@
 (function() {
     'use strict';
 
-    // Load enhanced detection system
-    const script = document.createElement('script');
-    script.src = chrome.runtime.getURL('src/enhanced-detection.js');
-    document.head.appendChild(script);
+    // Load enhanced detection system and site rules
+    const enhancedScript = document.createElement('script');
+    enhancedScript.src = chrome.runtime.getURL('src/enhanced-detection.js');
+    document.head.appendChild(enhancedScript);
+    
+    const rulesScript = document.createElement('script');
+    rulesScript.src = chrome.runtime.getURL('src/site-rules.js');
+    document.head.appendChild(rulesScript);
 
     const FIELD_PATTERNS = {
         firstName: ['first.*name', 'fname', 'first_name', 'firstname', 'given.*name', 'forename'],
@@ -59,6 +63,7 @@
         constructor() {
             this.detectedFields = new Map();
             this.enhancedDetector = null;
+            this.siteRulesEngine = null;
             this.init();
         }
 
@@ -83,6 +88,20 @@
                 console.log('Enhanced field detection initialized');
             } else {
                 console.warn('Enhanced field detection failed to load, using fallback');
+            }
+
+            // Wait for site rules engine to load
+            attempts = 0;
+            while (!window.SiteRulesEngine && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (window.SiteRulesEngine) {
+                this.siteRulesEngine = new window.SiteRulesEngine();
+                console.log('Site rules engine initialized');
+            } else {
+                console.warn('Site rules engine failed to load');
             }
         }
 
@@ -182,7 +201,7 @@
             const formElements = document.querySelectorAll('input, textarea, select');
             
             formElements.forEach(element => {
-                if (this.isFormField(element)) {
+                if (this.isFormField(element) && !this.shouldSkipField(element)) {
                     const fieldType = this.getFieldType(element);
                     if (fieldType) {
                         this.detectedFields.set(element, fieldType);
@@ -191,6 +210,12 @@
                     }
                 }
             });
+        }
+
+        shouldSkipField(element) {
+            if (!this.siteRulesEngine) return false;
+            
+            return this.siteRulesEngine.shouldSkipField(element);
         }
 
         addFieldHighlighting(element) {
@@ -231,6 +256,9 @@
                     sendResponse({ details });
                 } else if (message.action === 'retrainModel') {
                     this.retrainDetectionModel();
+                } else if (message.action === 'getCurrentSiteRules') {
+                    const rules = this.siteRulesEngine?.getApplicableRules();
+                    sendResponse({ rules });
                 }
             });
         }
@@ -279,17 +307,60 @@
             document.head.appendChild(style);
         }
 
-        autofillFields(userData) {
+        async autofillFields(userData) {
             const fieldsToFill = [];
+            
+            // Check site rules for custom handlers and security restrictions
+            let siteRules = null;
+            if (this.siteRulesEngine) {
+                siteRules = this.siteRulesEngine.getApplicableRules();
+                
+                // Execute beforeFill handler if exists
+                if (siteRules?.rules?.customHandlers?.beforeFill) {
+                    const canProceed = await this.siteRulesEngine.executeCustomHandler(
+                        siteRules.rules.customHandlers.beforeFill,
+                        { userData, fields: this.detectedFields }
+                    );
+                    if (!canProceed) {
+                        console.log('Site rules prevented autofill');
+                        return;
+                    }
+                }
+
+                // Apply security restrictions (banking sites)
+                if (siteRules?.security?.maxFields) {
+                    console.log('Applying security restrictions:', siteRules.security);
+                }
+            }
             
             this.detectedFields.forEach((fieldType, element) => {
                 if (userData[fieldType] && element.offsetParent !== null) {
-                    fieldsToFill.push({ element, value: userData[fieldType] });
+                    // Check security restrictions
+                    if (siteRules?.security?.allowedFields && 
+                        !siteRules.security.allowedFields.includes(fieldType)) {
+                        console.log('Skipping restricted field:', fieldType);
+                        return;
+                    }
+
+                    fieldsToFill.push({ element, value: userData[fieldType], fieldType });
                 }
             });
+
+            // Apply maxFields restriction
+            if (siteRules?.security?.maxFields && fieldsToFill.length > siteRules.security.maxFields) {
+                fieldsToFill.splice(siteRules.security.maxFields);
+                console.log('Limited to', siteRules.security.maxFields, 'fields for security');
+            }
             
-            fieldsToFill.forEach(({ element, value }, index) => {
-                setTimeout(() => {
+            // Get site-specific delays
+            const delays = siteRules?.delays || {};
+            const betweenFieldsDelay = delays.betweenFields || 100;
+            const beforeFillDelay = delays.beforeFill || 0;
+            
+            // Apply beforeFill delay if specified
+            setTimeout(() => {
+                fieldsToFill.forEach(({ element, value }, index) => {
+                    setTimeout(() => {
                     element.classList.add('pii-autofill-filling');
                     
                     element.focus();
@@ -314,15 +385,16 @@
                         element.classList.remove('pii-autofill-filling');
                     }, 500);
                     
-                }, index * 100);
-            });
-            
-            if (fieldsToFill.length > 0) {
-                chrome.runtime.sendMessage({
-                    action: 'autofillComplete',
-                    fieldsCount: fieldsToFill.length
+                    }, index * betweenFieldsDelay);
                 });
-            }
+                
+                if (fieldsToFill.length > 0) {
+                    chrome.runtime.sendMessage({
+                        action: 'autofillComplete',
+                        fieldsCount: fieldsToFill.length
+                    });
+                }
+            }, beforeFillDelay);
         }
 
         getFieldsOnPage() {
