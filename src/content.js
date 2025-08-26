@@ -3,11 +3,11 @@
 
     // Load enhanced detection system and site rules
     const enhancedScript = document.createElement('script');
-    enhancedScript.src = chrome.runtime.getURL('src/enhanced-detection.js');
+    enhancedScript.src = chrome.runtime.getURL('src/detector.js');
     document.head.appendChild(enhancedScript);
     
     const rulesScript = document.createElement('script');
-    rulesScript.src = chrome.runtime.getURL('src/site-rules.js');
+    rulesScript.src = chrome.runtime.getURL('src/rules.js');
     document.head.appendChild(rulesScript);
 
     const FIELD_PATTERNS = {
