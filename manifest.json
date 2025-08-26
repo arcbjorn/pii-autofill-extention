@@ -6,7 +6,8 @@
   "permissions": [
     "activeTab",
     "storage",
-    "contextMenus"
+    "contextMenus",
+    "notifications"
   ],
   "content_scripts": [
     {
@@ -15,7 +16,8 @@
     }
   ],
   "background": {
-    "service_worker": "src/background.js"
+    "service_worker": "src/background.js",
+    "type": "module"
   },
   "action": {
     "default_popup": "src/popup.html",
@@ -31,7 +33,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["src/enhanced-detection.js", "src/site-rules.js"],
+      "resources": ["src/enhanced-detection.js", "src/site-rules.js", "src/update-manager.js"],
       "matches": ["<all_urls>"]
     }
   ]
