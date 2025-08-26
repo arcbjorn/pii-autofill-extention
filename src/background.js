@@ -626,6 +626,6 @@ class BackgroundManager {
 
 // Initialize background manager
 // Import update manager
-importScripts('update-manager.js');
+importScripts('../scripts/update.js');
 
 const backgroundManager = new BackgroundManager();
