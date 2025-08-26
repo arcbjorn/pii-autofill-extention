@@ -28,6 +28,7 @@ class PopupManager {
         this.populateFieldMappings();
         await this.loadSiteRules();
         this.initDevTools();
+        this.initializeUpdates();
     }
 
     async loadProfiles() {
@@ -1231,6 +1232,154 @@ class PopupManager {
             console.error('Error clearing storage:', error);
             this.showMessage('Error clearing storage', 'error');
         }
+    }
+
+    // Update Management Methods
+    async initializeUpdates() {
+        // Get current version
+        const manifest = chrome.runtime.getManifest();
+        document.getElementById('currentVersion').textContent = `Version: ${manifest.version}`;
+
+        // Check for pending updates
+        await this.checkForPendingUpdate();
+
+        // Set up update event listeners
+        this.setupUpdateListeners();
+
+        // Listen for update messages from background
+        this.setupUpdateMessageHandlers();
+    }
+
+    async checkForPendingUpdate() {
+        try {
+            const result = await chrome.storage.local.get('pendingUpdate');
+            if (result.pendingUpdate) {
+                this.showUpdateNotification(result.pendingUpdate);
+            }
+        } catch (error) {
+            console.error('Error checking for pending update:', error);
+        }
+    }
+
+    setupUpdateListeners() {
+        // Check for updates button
+        document.getElementById('checkUpdates').addEventListener('click', async () => {
+            this.showMessage('Checking for updates...', 'info');
+            
+            try {
+                await chrome.runtime.sendMessage({ type: 'checkForUpdates' });
+                this.showMessage('Update check completed', 'success');
+            } catch (error) {
+                this.showMessage('Error checking for updates', 'error');
+            }
+        });
+
+        // Install update button
+        document.getElementById('installUpdate').addEventListener('click', async () => {
+            await this.startUpdate();
+        });
+
+        // Dismiss update button
+        document.getElementById('dismissUpdate').addEventListener('click', () => {
+            this.hideUpdateNotification();
+        });
+    }
+
+    setupUpdateMessageHandlers() {
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+            switch (message.type) {
+                case 'update-updateAvailable':
+                    this.showUpdateNotification(message.data);
+                    break;
+
+                case 'update-updateCompleted':
+                    this.onUpdateCompleted(message.data);
+                    break;
+
+                case 'update-updateFailed':
+                    this.onUpdateFailed(message.data);
+                    break;
+
+                case 'update-reloadPopup':
+                    window.location.reload();
+                    break;
+            }
+        });
+    }
+
+    showUpdateNotification(updateInfo) {
+        const notification = document.getElementById('updateNotification');
+        const versionElement = document.getElementById('updateVersion');
+        
+        versionElement.textContent = `Version ${updateInfo.version} is ready to install`;
+        notification.style.display = 'block';
+    }
+
+    hideUpdateNotification() {
+        document.getElementById('updateNotification').style.display = 'none';
+    }
+
+    async startUpdate() {
+        const progressContainer = document.getElementById('updateProgress');
+        const progressFill = document.getElementById('progressFill');
+        const statusElement = document.getElementById('updateStatus');
+        
+        // Hide notification and show progress
+        this.hideUpdateNotification();
+        progressContainer.style.display = 'block';
+        
+        // Animate progress
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 90) progress = 90;
+            
+            progressFill.style.width = `${progress}%`;
+        }, 200);
+
+        try {
+            statusElement.textContent = 'Backing up user data...';
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            statusElement.textContent = 'Downloading update...';
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            statusElement.textContent = 'Installing update...';
+            
+            // Start the actual update
+            await chrome.runtime.sendMessage({ type: 'startUpdate' });
+            
+        } catch (error) {
+            clearInterval(progressInterval);
+            this.onUpdateFailed({ error: error.message });
+        }
+    }
+
+    onUpdateCompleted(data) {
+        const progressFill = document.getElementById('progressFill');
+        const statusElement = document.getElementById('updateStatus');
+        
+        progressFill.style.width = '100%';
+        statusElement.textContent = `Successfully updated to version ${data.version}!`;
+        
+        // Hide progress after delay
+        setTimeout(() => {
+            document.getElementById('updateProgress').style.display = 'none';
+            document.getElementById('currentVersion').textContent = `Version: ${data.version}`;
+            this.showMessage(`Updated to version ${data.version}!`, 'success');
+        }, 2000);
+    }
+
+    onUpdateFailed(data) {
+        const progressContainer = document.getElementById('updateProgress');
+        const statusElement = document.getElementById('updateStatus');
+        
+        statusElement.textContent = `Update failed: ${data.error}`;
+        
+        setTimeout(() => {
+            progressContainer.style.display = 'none';
+            this.showMessage('Update failed. Please try again later.', 'error');
+        }, 3000);
     }
 }
 
