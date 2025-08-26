@@ -33,7 +33,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["src/enhanced-detection.js", "src/site-rules.js", "src/update-manager.js"],
+      "resources": ["src/detector.js", "src/rules.js", "scripts/update.js"],
       "matches": ["<all_urls>"]
     }
   ]
