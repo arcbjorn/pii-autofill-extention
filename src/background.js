@@ -5,6 +5,7 @@ class BackgroundManager {
         this.settings = {};
         this.encryptionKey = null;
         this.syncEnabled = false;
+        this.updateManager = null;
         
         this.init();
     }
@@ -15,6 +16,7 @@ class BackgroundManager {
         this.setupEventListeners();
         this.createContextMenu();
         this.setupSyncMonitoring();
+        this.initializeUpdateManager();
     }
 
     async loadSettings() {
@@ -544,6 +546,13 @@ class BackgroundManager {
         await this.loadSettings();
     }
 
+    initializeUpdateManager() {
+        // Initialize update manager
+        if (typeof UpdateManager !== 'undefined') {
+            this.updateManager = new UpdateManager();
+        }
+    }
+
     async syncData() {
         if (!this.syncEnabled) return;
 
@@ -616,4 +625,7 @@ class BackgroundManager {
 }
 
 // Initialize background manager
+// Import update manager
+importScripts('update-manager.js');
+
 const backgroundManager = new BackgroundManager();
