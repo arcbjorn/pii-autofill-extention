@@ -905,3 +905,95 @@ select:focus {
 .connection-status.disconnected {
     color: #f44336;
 }
+
+/* Update Section Styles */
+.update-section {
+    margin-top: 8px;
+}
+
+.update-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+#currentVersion {
+    color: #666;
+    font-size: 13px;
+}
+
+.update-notification {
+    background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+    border: 1px solid #2196f3;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 8px 0;
+}
+
+.update-message {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.update-icon {
+    font-size: 20px;
+    margin-right: 8px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.update-text strong {
+    color: #1976d2;
+    display: block;
+    margin-bottom: 4px;
+}
+
+#updateVersion {
+    font-size: 12px;
+    color: #666;
+}
+
+.update-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.update-actions .btn {
+    flex: 1;
+    font-size: 12px;
+    padding: 6px 12px;
+}
+
+.update-progress {
+    background: #f5f5f5;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 8px 0;
+}
+
+.progress-bar {
+    background: #e0e0e0;
+    border-radius: 4px;
+    height: 6px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, #4caf50, #8bc34a);
+    height: 100%;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+#updateStatus {
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+}
