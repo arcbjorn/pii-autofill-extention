@@ -5,11 +5,11 @@
   "main": "dev-server.js",
   "scripts": {
     "dev": "node dev-server.js",
-    "start": "npm run dev",
-    "build": "npm run copy-files",
+    "start": "pnpm run dev",
+    "build": "pnpm run copy-files",
     "copy-files": "mkdir -p dist && cp -r src/* dist/ && cp manifest.json dist/",
     "clean": "rm -rf dist/*",
-    "watch": "npm run dev"
+    "watch": "pnpm run dev"
   },
   "keywords": [
     "chrome-extension",
