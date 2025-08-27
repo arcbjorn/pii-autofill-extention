@@ -20,27 +20,24 @@ declare global {
 export interface FieldType {
   firstName: string;
   lastName: string;
-  fullName: string;
   email: string;
   phone: string;
-  street: string;
-  city: string;
-  state: string;
-  zip: string;
+  location: string;
   country: string;
   company: string;
   jobTitle: string;
-  website: string;
   linkedin: string;
-  twitter: string;
-  facebook: string;
-  instagram: string;
   github: string;
-  youtube: string;
-  tiktok: string;
-  snapchat: string;
-  discord: string;
-  password: string;
+  xProfile: string;
+  googleScholar: string;
+  exceptionalWork: string;
+  visaSponsorship: string;
+  interviewingProcesses: string;
+  gender: string;
+  veteranStatus: string;
+  hispanicLatino: string;
+  race: string;
+  disabilityStatus: string;
 }
 
 export type FieldTypeName = keyof FieldType;
@@ -107,14 +104,9 @@ export interface FormContext {
 
 export interface Profile {
   personal: Partial<FieldType>;
-  work: Partial<FieldType>;
-  custom: Partial<FieldType>;
 }
 
 export interface Settings {
-  passwordProtected: boolean;
-  syncEnabled: boolean;
-  encryptSensitiveFields: boolean;
   autoDetectFields: boolean;
   debugMode: boolean;
 }
