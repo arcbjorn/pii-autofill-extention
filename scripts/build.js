@@ -73,7 +73,7 @@ class ExtensionBuilder {
         try {
             // Check if TypeScript files exist
             const tsFiles = [
-                'src/content-optimized.ts',
+                'src/content.ts',
                 'src/background.ts', 
                 'src/popup.ts'
             ];
@@ -106,12 +106,16 @@ class ExtensionBuilder {
             const srcDir = path.join(tempDir, 'src');
             
             if (await this.pathExists(srcDir)) {
+                // Ensure destination directory exists
+                const destSrcDir = path.join(this.buildDir, 'src');
+                await fs.mkdir(destSrcDir, { recursive: true });
+                
                 const compiledFiles = await fs.readdir(srcDir);
                 
                 for (const file of compiledFiles) {
                     if (file.endsWith('.js')) {
                         const srcPath = path.join(srcDir, file);
-                        const destPath = path.join(this.sourceDir, 'src', file);
+                        const destPath = path.join(destSrcDir, file);
                         await fs.copyFile(srcPath, destPath);
                         console.log(`  ✓ ${file}`);
                     }
@@ -148,7 +152,7 @@ class ExtensionBuilder {
     }
 
     async copySourceFiles() {
-        console.log('📁 Copying source files...');
+        console.log('📁 Copying non-TypeScript source files...');
         
         const srcDir = path.join(this.sourceDir, 'src');
         const destSrcDir = path.join(this.buildDir, 'src');
@@ -158,6 +162,11 @@ class ExtensionBuilder {
         const files = await fs.readdir(srcDir);
         
         for (const file of files) {
+            // Skip TypeScript source files - only copy HTML, CSS, and other assets
+            if (file.endsWith('.ts')) {
+                continue;
+            }
+            
             const srcPath = path.join(srcDir, file);
             const destPath = path.join(destSrcDir, file);
             
@@ -240,6 +249,19 @@ class ExtensionBuilder {
         );
         
         await fs.writeFile(popupPath, content);
+        
+        // Remove export statements from all JS files
+        const jsFiles = ['content.js', 'background.js', 'popup.js'];
+        for (const fileName of jsFiles) {
+            const jsPath = path.join(this.buildDir, 'src', fileName);
+            if (await this.pathExists(jsPath)) {
+                let jsContent = await fs.readFile(jsPath, 'utf8');
+                jsContent = jsContent.replace(/export\s*{\s*}\s*;?\s*\n?/g, '');
+                jsContent = jsContent.replace(/export\s+{\s*}\s*;?\s*\n?/g, '');
+                await fs.writeFile(jsPath, jsContent);
+            }
+        }
+        
         console.log('  ✓ Updated script references');
     }
 
