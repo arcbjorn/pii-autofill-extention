@@ -31,10 +31,5 @@
       "description": "Trigger autofill"
     }
   },
-  "web_accessible_resources": [
-    {
-      "resources": ["src/detector.js", "src/rules.js", "scripts/update.js"],
-      "matches": ["<all_urls>"]
-    }
-  ]
+  "web_accessible_resources": []
 }
