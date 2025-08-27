@@ -28,13 +28,18 @@ export interface FieldType {
   state: string;
   zip: string;
   country: string;
-  cardNumber: string;
-  cvv: string;
-  expiryDate: string;
   company: string;
   jobTitle: string;
   website: string;
   linkedin: string;
+  twitter: string;
+  facebook: string;
+  instagram: string;
+  github: string;
+  youtube: string;
+  tiktok: string;
+  snapchat: string;
+  discord: string;
   password: string;
 }
 

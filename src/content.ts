@@ -34,13 +34,18 @@ import {
         state: [/state/i, /province/i, /region/i, /territory/i, /county/i],
         zip: [/zip/i, /postal/i, /post.*code/i, /zipcode/i, /postal.*code/i],
         country: [/country/i, /nation/i, /citizenship/i],
-        cardNumber: [/card.*number/i, /cc.*number/i, /credit.*card/i, /debit.*card/i, /card.*no/i],
-        cvv: [/cvv/i, /cvc/i, /security.*code/i, /card.*code/i, /verification.*code/i],
-        expiryDate: [/expiry/i, /exp.*date/i, /expiration/i, /valid.*until/i, /expires/i],
         company: [/company/i, /organization/i, /employer/i, /workplace/i, /business/i],
         jobTitle: [/job.*title/i, /position/i, /role/i, /designation/i, /occupation/i],
         website: [/website/i, /url/i, /web.*site/i, /homepage/i, /web.*page/i],
-        linkedin: [/linkedin/i, /linked.*in/i, /profile.*url/i],
+        linkedin: [/linkedin/i, /linked.*in/i, /profile.*url/i, /linkedin.*profile/i],
+        twitter: [/twitter/i, /twitter.*handle/i, /twitter.*username/i, /twitter.*profile/i],
+        facebook: [/facebook/i, /fb/i, /facebook.*profile/i, /facebook.*url/i],
+        instagram: [/instagram/i, /ig/i, /instagram.*handle/i, /instagram.*profile/i],
+        github: [/github/i, /github.*username/i, /github.*profile/i, /git.*username/i],
+        youtube: [/youtube/i, /youtube.*channel/i, /yt/i, /youtube.*handle/i],
+        tiktok: [/tiktok/i, /tik.*tok/i, /tiktok.*handle/i, /tiktok.*username/i],
+        snapchat: [/snapchat/i, /snap/i, /snapchat.*username/i, /snap.*handle/i],
+        discord: [/discord/i, /discord.*username/i, /discord.*handle/i, /discord.*tag/i],
         password: [/password/i, /pass/i, /pwd/i]
     };
 
@@ -56,9 +61,6 @@ import {
         'address-level1': 'state',
         'postal-code': 'zip',
         'country': 'country',
-        'cc-number': 'cardNumber',
-        'cc-csc': 'cvv',
-        'cc-exp': 'expiryDate',
         'organization': 'company',
         'organization-title': 'jobTitle',
         'url': 'website'
@@ -540,8 +542,9 @@ import {
             const fieldTypes: FieldTypeName[] = [
                 'firstName', 'lastName', 'fullName', 'email', 'phone',
                 'street', 'city', 'state', 'zip', 'country',
-                'cardNumber', 'cvv', 'expiryDate',
-                'company', 'jobTitle', 'website', 'linkedin'
+                'company', 'jobTitle', 'website', 'linkedin',
+                'twitter', 'facebook', 'instagram', 'github',
+                'youtube', 'tiktok', 'snapchat', 'discord'
             ];
 
             // Create a simple correction interface

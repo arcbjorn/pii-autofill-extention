@@ -126,13 +126,18 @@ class EnhancedFieldDetector {
             state: ['state', 'province', 'region', 'territory'],
             zip: ['zip', 'zipcode', 'postal', 'postal_code', 'postcode'],
             country: ['country', 'nation', 'nationality'],
-            cardNumber: ['cardnumber', 'card_number', 'ccnumber', 'cc_number'],
-            cvv: ['cvv', 'cvc', 'security_code', 'card_code'],
-            expiryDate: ['expiry', 'exp_date', 'expiration', 'exp'],
             company: ['company', 'organization', 'employer', 'workplace'],
             jobTitle: ['job_title', 'position', 'title', 'role'],
             website: ['website', 'url', 'web_site', 'homepage'],
-            linkedin: ['linkedin', 'linked_in', 'profile_url']
+            linkedin: ['linkedin', 'linked_in', 'linkedin_profile', 'linkedin_url'],
+            twitter: ['twitter', 'twitter_handle', 'twitter_username', 'twitter_profile'],
+            facebook: ['facebook', 'fb', 'facebook_profile', 'facebook_url'],
+            instagram: ['instagram', 'ig', 'instagram_handle', 'instagram_profile'],
+            github: ['github', 'github_username', 'github_profile', 'git_username'],
+            youtube: ['youtube', 'youtube_channel', 'yt', 'youtube_handle'],
+            tiktok: ['tiktok', 'tik_tok', 'tiktok_handle', 'tiktok_username'],
+            snapchat: ['snapchat', 'snap', 'snapchat_username', 'snap_handle'],
+            discord: ['discord', 'discord_username', 'discord_handle', 'discord_tag']
         };
 
         this.fuzzyPatterns = {
@@ -145,10 +150,17 @@ class EnhancedFieldDetector {
             city: [/city.*name/i, /town.*name/i],
             state: [/state.*province/i, /region.*state/i],
             zip: [/zip.*code/i, /postal.*code/i, /post.*code/i],
-            cardNumber: [/card.*number/i, /credit.*card/i, /cc.*num/i],
-            cvv: [/security.*code/i, /cvv.*code/i, /card.*verification/i],
             company: [/company.*name/i, /organization.*name/i],
-            jobTitle: [/job.*title/i, /work.*title/i, /position.*title/i]
+            jobTitle: [/job.*title/i, /work.*title/i, /position.*title/i],
+            linkedin: [/linkedin.*profile/i, /linkedin.*url/i, /linked.*in/i],
+            twitter: [/twitter.*handle/i, /twitter.*profile/i, /@.*twitter/i],
+            facebook: [/facebook.*profile/i, /facebook.*url/i, /fb.*profile/i],
+            instagram: [/instagram.*handle/i, /ig.*profile/i, /instagram.*account/i],
+            github: [/github.*profile/i, /github.*username/i, /git.*profile/i],
+            youtube: [/youtube.*channel/i, /yt.*channel/i, /youtube.*handle/i],
+            tiktok: [/tiktok.*handle/i, /tik.*tok/i, /tiktok.*username/i],
+            snapchat: [/snapchat.*username/i, /snap.*handle/i, /snapchat.*profile/i],
+            discord: [/discord.*username/i, /discord.*tag/i, /discord.*handle/i]
         };
 
         this.commonPatterns = {
@@ -157,8 +169,15 @@ class EnhancedFieldDetector {
             email: [/@/i, /mail$/i, /^em$/i],
             phone: [/^\d{3}[-.\s]?\d{3}[-.\s]?\d{4}$/, /tel$/i, /ph$/i],
             zip: [/^\d{5}(-\d{4})?$/, /postal$/i, /^zip$/i],
-            cardNumber: [/^\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}$/, /card$/i],
-            cvv: [/^\d{3,4}$/, /security$/i]
+            linkedin: [/linkedin\.com/i, /^@/i, /profile$/i],
+            twitter: [/twitter\.com/i, /^@/i, /handle$/i],
+            facebook: [/facebook\.com/i, /fb\.com/i, /^@/i],
+            instagram: [/instagram\.com/i, /^@/i, /ig$/i],
+            github: [/github\.com/i, /^@/i, /git$/i],
+            youtube: [/youtube\.com/i, /youtu\.be/i, /channel$/i],
+            tiktok: [/tiktok\.com/i, /^@/i, /tt$/i],
+            snapchat: [/snapchat\.com/i, /^@/i, /snap$/i],
+            discord: [/#\d{4}$/i, /discord$/i, /^@/i]
         };
     }
 
