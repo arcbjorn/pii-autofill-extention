@@ -1,601 +1,354 @@
-"use strict";
+// Simple field detection content script
 
-import { 
-    FieldTypeName, 
-    FieldType, 
-    DetectedField, 
-    FormContext,
-    MessageRequest,
-    AutofillMessage,
-    DetectionMessage,
-    FieldPattern
-} from '../types/extension';
+import { FieldTypeName } from '../types/extension';
 
-(function() {
-    'use strict';
+const FIELD_PATTERNS: Record<FieldTypeName, RegExp[]> = {
+    firstName: [/first.*name/i, /fname/i, /first_name/i, /firstname/i, /given.*name/i, /forename/i],
+    lastName: [/last.*name/i, /lname/i, /last_name/i, /lastname/i, /family.*name/i, /surname/i],
+    email: [/email/i, /e.*mail/i, /mail/i, /email.*address/i, /user.*email/i],
+    phone: [/phone/i, /tel/i, /telephone/i, /mobile/i, /cell/i, /phone.*number/i, /contact.*number/i],
+    location: [/location/i, /\bcity\b/i, /residence/i, /current.*city/i, /home.*city/i, /based.*in/i, /work.*location/i, /office.*location/i],
+    country: [/country/i, /nation/i, /nationality/i, /country.*residence/i, /home.*country/i, /citizenship/i],
+    company: [/company/i, /organization/i, /employer/i, /workplace/i, /business/i, /current.*company/i],
+    jobTitle: [/job.*title/i, /position/i, /role/i, /designation/i, /occupation/i, /current.*title/i, /title/i],
+    linkedin: [/linkedin/i, /linked.*in/i, /profile.*url/i, /linkedin.*profile/i],
+    github: [/github/i, /git.*hub/i, /github.*profile/i, /github.*url/i, /repository/i, /git.*profile/i],
+    xProfile: [/twitter/i, /x\.com/i, /x.*profile/i, /twitter.*profile/i, /x.*handle/i, /twitter.*handle/i],
+    googleScholar: [/google.*scholar/i, /scholar/i, /scholar.*profile/i, /academic.*profile/i, /research.*profile/i],
+    exceptionalWork: [/exceptional.*work/i, /exceptional/i, /work.*done/i, /accomplishments/i, /achievements/i, /notable.*work/i, /proud.*of/i, /piece.*work/i],
+    visaSponsorship: [/visa/i, /sponsorship/i, /work.*authorization/i, /employment.*visa/i, /h.*1.*b/i, /visa.*status/i, /require.*sponsorship/i, /work.*legally/i, /authorization.*work/i],
+    interviewingProcesses: [/interviewing.*process/i, /other.*interview/i, /active.*interview/i, /interview.*elsewhere/i, /other.*opportunities/i, /interviewing.*elsewhere/i, /interview.*process/i],
+    gender: [/gender/i, /sex/i, /gender.*identity/i, /male.*female/i],
+    veteranStatus: [/veteran/i, /military/i, /veteran.*status/i, /armed.*forces/i, /military.*service/i, /protected.*veteran/i],
+    hispanicLatino: [/hispanic/i, /latino/i, /hispanic.*latino/i, /ethnicity/i, /hispanic.*origin/i],
+    race: [/race/i, /racial/i, /ethnicity/i, /ethnic.*background/i, /racial.*identity/i, /identify.*race/i],
+    disabilityStatus: [/disability/i, /disabled/i, /disability.*status/i, /accommodation/i, /ada/i, /impairment/i]
+};
 
-    // Load enhanced detection system and site rules
-    const enhancedScript = document.createElement('script');
-    enhancedScript.src = chrome.runtime.getURL('src/detector.js');
-    document.head.appendChild(enhancedScript);
+const AUTOCOMPLETE_MAP: Record<string, FieldTypeName> = {
+    'given-name': 'firstName',
+    'family-name': 'lastName',
+    'email': 'email',
+    'tel': 'phone',
+    'organization': 'company',
+    'organization-title': 'jobTitle',
+    'url': 'linkedin'
+};
 
-    const rulesScript = document.createElement('script');
-    rulesScript.src = chrome.runtime.getURL('src/rules.js');
-    document.head.appendChild(rulesScript);
+const INPUT_TYPE_MAP: Record<string, FieldTypeName> = {
+    'email': 'email',
+    'tel': 'phone',
+    'url': 'linkedin'
+};
 
-    const FIELD_PATTERNS: Record<FieldTypeName, RegExp[]> = {
-        firstName: [/first.*name/i, /fname/i, /first_name/i, /firstname/i, /given.*name/i, /forename/i],
-        lastName: [/last.*name/i, /lname/i, /last_name/i, /lastname/i, /family.*name/i, /surname/i],
-        fullName: [/full.*name/i, /name/i, /full_name/i, /fullname/i, /complete.*name/i, /contact.*name/i],
-        email: [/email/i, /e.*mail/i, /mail/i, /email.*address/i, /user.*email/i],
-        phone: [/phone/i, /tel/i, /telephone/i, /mobile/i, /cell/i, /phone.*number/i, /contact.*number/i],
-        street: [/street/i, /address/i, /addr/i, /address.*1/i, /address.*line.*1/i, /street.*address/i],
-        city: [/city/i, /town/i, /locality/i, /municipal/i],
-        state: [/state/i, /province/i, /region/i, /territory/i, /county/i],
-        zip: [/zip/i, /postal/i, /post.*code/i, /zipcode/i, /postal.*code/i],
-        country: [/country/i, /nation/i, /citizenship/i],
-        company: [/company/i, /organization/i, /employer/i, /workplace/i, /business/i],
-        jobTitle: [/job.*title/i, /position/i, /role/i, /designation/i, /occupation/i],
-        website: [/website/i, /url/i, /web.*site/i, /homepage/i, /web.*page/i],
-        linkedin: [/linkedin/i, /linked.*in/i, /profile.*url/i, /linkedin.*profile/i],
-        twitter: [/twitter/i, /twitter.*handle/i, /twitter.*username/i, /twitter.*profile/i],
-        facebook: [/facebook/i, /fb/i, /facebook.*profile/i, /facebook.*url/i],
-        instagram: [/instagram/i, /ig/i, /instagram.*handle/i, /instagram.*profile/i],
-        github: [/github/i, /github.*username/i, /github.*profile/i, /git.*username/i],
-        youtube: [/youtube/i, /youtube.*channel/i, /yt/i, /youtube.*handle/i],
-        tiktok: [/tiktok/i, /tik.*tok/i, /tiktok.*handle/i, /tiktok.*username/i],
-        snapchat: [/snapchat/i, /snap/i, /snapchat.*username/i, /snap.*handle/i],
-        discord: [/discord/i, /discord.*username/i, /discord.*handle/i, /discord.*tag/i],
-        password: [/password/i, /pass/i, /pwd/i]
-    };
+class FieldDetector {
+    private detectedFields: Map<HTMLElement, FieldTypeName>;
 
-    const AUTOCOMPLETE_MAP: Record<string, FieldTypeName> = {
-        'given-name': 'firstName',
-        'family-name': 'lastName',
-        'name': 'fullName',
-        'email': 'email',
-        'tel': 'phone',
-        'street-address': 'street',
-        'address-line1': 'street',
-        'address-level2': 'city',
-        'address-level1': 'state',
-        'postal-code': 'zip',
-        'country': 'country',
-        'organization': 'company',
-        'organization-title': 'jobTitle',
-        'url': 'website'
-    };
-
-    const INPUT_TYPE_MAP: Record<string, FieldTypeName> = {
-        'email': 'email',
-        'tel': 'phone',
-        'url': 'website'
-    };
-
-    interface EnhancedDetector {
-        detectFieldType(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): { type: FieldTypeName; score: number; confidence: number; isLearned?: boolean } | null;
-        recordUserCorrection(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement, detectedType: FieldTypeName, correctedType: FieldTypeName): Promise<void>;
-        getDetectionDetails(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): any;
-        retrainModel?(): Promise<void>;
+    constructor() {
+        this.detectedFields = new Map();
+        this.init();
     }
 
-    interface SiteRulesEngine {
-        shouldSkipField(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): boolean;
-        getApplicableRules(): { rules?: any; security?: any; delays?: any } | null;
-        executeCustomHandler?(handler: string, context: any): Promise<boolean>;
+    private init(): void {
+        this.scanForFields();
+        this.setupEventListeners();
+        this.setupMutationObserver();
+        this.addStyles();
     }
 
-    class FieldDetector {
-        private detectedFields = new Map<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement, FieldTypeName>();
-        private enhancedDetector: EnhancedDetector | null = null;
-        private siteRulesEngine: SiteRulesEngine | null = null;
+    private fuzzyMatch(text: string, patterns: RegExp[]): boolean {
+        if (!text) return false;
+        const normalizedText = text.toLowerCase().replace(/[_\-\s]/g, '');
+        return patterns.some(pattern => pattern.test(text) || pattern.test(normalizedText));
+    }
 
-        constructor() {
-            this.init();
+    private getFieldType(element: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement): FieldTypeName | null {
+        const name = element.getAttribute('name') || '';
+        const id = element.id || '';
+        const placeholder = (element as HTMLInputElement).placeholder || '';
+        const type = (element as HTMLInputElement).type || '';
+        const autocomplete = element.getAttribute('autocomplete') || '';
+        const className = element.className || '';
+
+
+        // Check autocomplete first
+        if (autocomplete && AUTOCOMPLETE_MAP[autocomplete]) {
+            return AUTOCOMPLETE_MAP[autocomplete];
         }
 
-        private async init(): Promise<void> {
-            await this.initializeEnhancedDetection();
-            this.scanForFields();
-            this.setupEventListeners();
-            this.setupMutationObserver();
-            this.addStyles();
+        // Check input type
+        if (type && INPUT_TYPE_MAP[type]) {
+            return INPUT_TYPE_MAP[type];
         }
 
-        private async initializeEnhancedDetection(): Promise<void> {
-            // Wait for enhanced detection script to load
-            let attempts = 0;
-            while (!(window as any).EnhancedFieldDetector && attempts < 50) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                attempts++;
-            }
+        const label = this.getAssociatedLabel(element);
+        const allText = [name, id, placeholder, label, className].join(' ');
 
-            if ((window as any).EnhancedFieldDetector) {
-                this.enhancedDetector = new (window as any).EnhancedFieldDetector();
-                console.log('Enhanced field detection initialized');
-            } else {
-                console.warn('Enhanced field detection failed to load, using fallback');
-            }
-
-            // Wait for site rules engine to load
-            attempts = 0;
-            while (!(window as any).SiteRulesEngine && attempts < 50) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                attempts++;
-            }
-
-            if ((window as any).SiteRulesEngine) {
-                this.siteRulesEngine = new (window as any).SiteRulesEngine();
-                console.log('Site rules engine initialized');
-            } else {
-                console.warn('Site rules engine failed to load');
+        // Check all patterns
+        for (const fieldType of Object.keys(FIELD_PATTERNS) as FieldTypeName[]) {
+            const patterns = FIELD_PATTERNS[fieldType];
+            if (this.fuzzyMatch(allText, patterns)) {
+                return fieldType;
             }
         }
 
-        private fuzzyMatch(text: string, patterns: RegExp[]): boolean {
-            if (!text) return false;
-            
-            const normalizedText = text.toLowerCase().replace(/[_\-\s]/g, '');
-            return patterns.some(pattern => 
-                pattern.test(text) || pattern.test(normalizedText)
-            );
+        return null;
+    }
+
+    private getAssociatedLabel(element: HTMLElement): string {
+        const inputElement = element as HTMLInputElement;
+        
+        if (inputElement.labels && inputElement.labels.length > 0) {
+            const label = inputElement.labels[0];
+            return label ? (label.textContent || '') : '';
         }
 
-        private getFieldType(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): FieldTypeName | null {
-            // Use enhanced detection if available
-            if (this.enhancedDetector) {
-                const detection = this.enhancedDetector.detectFieldType(element);
-                if (detection && detection.type) {
-                    // Store detection details for learning
-                    element.dataset.detectionScore = detection.score.toString();
-                    element.dataset.detectionConfidence = detection.confidence.toString();
-                    element.dataset.isLearned = (detection.isLearned || false).toString();
-                    
-                    console.log(`Enhanced detection: ${detection.type} (score: ${detection.score}, confidence: ${detection.confidence})`);
-                    return detection.type;
+        if (element.id) {
+            const label = document.querySelector(`label[for="${element.id}"]`);
+            if (label) return label.textContent || '';
+        }
+
+        const parentLabel = element.closest('label');
+        if (parentLabel) return parentLabel.textContent || '';
+
+        const previousLabel = element.previousElementSibling;
+        if (previousLabel && previousLabel.tagName === 'LABEL') {
+            return previousLabel.textContent || '';
+        }
+
+        return '';
+    }
+
+    private isFormField(element: HTMLElement): boolean {
+        if (!element.tagName) return false;
+        const tagName = element.tagName.toLowerCase();
+        if (tagName === 'input') {
+            const type = ((element as HTMLInputElement).type || 'text').toLowerCase();
+            return ['text', 'email', 'tel', 'url', 'password'].includes(type);
+        }
+        return tagName === 'textarea' || tagName === 'select';
+    }
+
+    private scanForFields(): void {
+        this.detectedFields.clear();
+        const formElements = document.querySelectorAll('input, textarea, select');
+
+        formElements.forEach(element => {
+            const htmlElement = element as HTMLElement;
+            if (this.isFormField(htmlElement)) {
+                const fieldType = this.getFieldType(htmlElement as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement);
+                if (fieldType) {
+                    this.detectedFields.set(htmlElement, fieldType);
+                    this.addFieldHighlighting(htmlElement);
                 }
             }
+        });
+    }
 
-            // Fallback to original detection logic
-            return this.getFieldTypeFallback(element);
-        }
+    private addFieldHighlighting(element: HTMLElement): void {
+        element.addEventListener('mouseenter', () => {
+            (element as any).style.transition = 'border-color 0.2s ease';
+            (element as any).style.borderColor = '#4CAF50';
+            (element as any).style.borderWidth = '2px';
+            (element as any).style.borderStyle = 'solid';
+        });
 
-        private getFieldTypeFallback(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): FieldTypeName | null {
-            const name = (element as HTMLInputElement).name || '';
-            const id = element.id || '';
-            const placeholder = (element as HTMLInputElement).placeholder || '';
-            const type = (element as HTMLInputElement).type || '';
-            const autocomplete = (element as HTMLInputElement).autocomplete || '';
-            const className = element.className || '';
+        element.addEventListener('mouseleave', () => {
+            (element as any).style.borderColor = '';
+            (element as any).style.borderWidth = '';
+            (element as any).style.borderStyle = '';
+        });
+    }
 
-            if (autocomplete && AUTOCOMPLETE_MAP[autocomplete]) {
-                return AUTOCOMPLETE_MAP[autocomplete];
-            }
+    private setupEventListeners(): void {
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
-            if (type && INPUT_TYPE_MAP[type]) {
-                return INPUT_TYPE_MAP[type];
-            }
-
-            const label = this.getAssociatedLabel(element);
-            const allText = [name, id, placeholder, label, className].join(' ');
-
-            for (const [fieldType, patterns] of Object.entries(FIELD_PATTERNS) as [FieldTypeName, RegExp[]][]) {
-                if (this.fuzzyMatch(allText, patterns)) {
-                    return fieldType;
-                }
-            }
-
-            return null;
-        }
-
-        private getAssociatedLabel(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): string {
-            if ((element as HTMLInputElement).labels && (element as HTMLInputElement).labels!.length > 0) {
-                const label = (element as HTMLInputElement).labels![0];
-                return label ? (label.textContent || '') : '';
-            }
-
-            if (element.id) {
-                const label = document.querySelector(`label[for="${element.id}"]`);
-                if (label) return label.textContent || '';
-            }
-
-            const parentLabel = element.closest('label');
-            if (parentLabel) return parentLabel.textContent || '';
-
-            const previousLabel = element.previousElementSibling as HTMLLabelElement;
-            if (previousLabel && previousLabel.tagName === 'LABEL') {
-                return previousLabel.textContent || '';
-            }
-
-            return '';
-        }
-
-        private isFormField(element: Element): element is HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement {
-            if (!element.tagName) return false;
-            
-            const tagName = element.tagName.toLowerCase();
-            if (tagName === 'input') {
-                const type = ((element as HTMLInputElement).type || 'text').toLowerCase();
-                return ['text', 'email', 'tel', 'url', 'password'].includes(type);
+            if (message.action === 'autofill') {
+                this.autofillFields(message.data).then(() => {
+                    const safeResponse = JSON.parse(JSON.stringify({ success: true }));
+                    sendResponse(safeResponse);
+                }).catch(error => {
+                    const safeResponse = JSON.parse(JSON.stringify({ 
+                        success: false, 
+                        error: String(error?.message || 'Unknown error')
+                    }));
+                    sendResponse(safeResponse);
+                });
+                return true; // Keep message channel open for async response
+            } else if (message.action === 'getDetectedFields') {
+                const fieldTypes = Array.from(this.detectedFields.values()).filter(type => type != null && type !== undefined);
+                const uniqueFieldTypes = [...new Set(fieldTypes)].filter(type => type != null);
+                
+                const safeResponse = JSON.parse(JSON.stringify({ 
+                    success: true,
+                    fieldTypes: uniqueFieldTypes,
+                    count: Number(this.detectedFields.size) || 0
+                }));
+                
+                sendResponse(safeResponse);
             }
             
-            return tagName === 'textarea' || tagName === 'select';
-        }
+            return true; // Keep message channel open for async responses
+        });
+    }
 
-        private scanForFields(): void {
-            this.detectedFields.clear();
-            const formElements = document.querySelectorAll('input, textarea, select');
-            
-            formElements.forEach(element => {
-                if (this.isFormField(element) && !this.shouldSkipField(element)) {
-                    const fieldType = this.getFieldType(element);
-                    if (fieldType) {
-                        this.detectedFields.set(element, fieldType);
-                        this.addFieldHighlighting(element);
-                        this.addFieldCorrectionMenu(element);
-                    }
-                }
-            });
-        }
-
-        private shouldSkipField(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): boolean {
-            if (!this.siteRulesEngine) return false;
-            return this.siteRulesEngine.shouldSkipField(element);
-        }
-
-        private addFieldHighlighting(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): void {
-            element.addEventListener('mouseenter', () => {
-                element.style.transition = 'border-color 0.2s ease';
-                element.style.borderColor = '#4CAF50';
-                element.style.borderWidth = '2px';
-                element.style.borderStyle = 'solid';
-            });
-
-            element.addEventListener('mouseleave', () => {
-                element.style.borderColor = '';
-                element.style.borderWidth = '';
-                element.style.borderStyle = '';
-            });
-        }
-
-        private setupEventListeners(): void {
-            document.addEventListener('contextmenu', (e) => {
-                if (this.isFormField(e.target as Element) && this.detectedFields.has(e.target as any)) {
-                    chrome.runtime.sendMessage({
-                        action: 'showContextMenu',
-                        fieldType: this.detectedFields.get(e.target as any)
+    private setupMutationObserver(): void {
+        const observer = new MutationObserver((mutations) => {
+            let shouldRescan = false;
+            mutations.forEach(mutation => {
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === Node.ELEMENT_NODE) {
+                            const element = node as Element;
+                            const hasFormFields = element.querySelectorAll('input, textarea, select').length > 0;
+                            if (hasFormFields || this.isFormField(element as HTMLElement)) {
+                                shouldRescan = true;
+                            }
+                        }
                     });
                 }
             });
 
-            chrome.runtime.onMessage.addListener((message: MessageRequest, sender, sendResponse) => {
-                if (message.action === 'autofill') {
-                    const autofillMsg = message as AutofillMessage;
-                    this.autofillFields(autofillMsg.data);
-                } else if (message.action === 'getDetectedFields') {
-                    const fieldTypes = Array.from(this.detectedFields.values());
-                    sendResponse({ fieldTypes: [...new Set(fieldTypes)] });
-                } else if (message.action === 'correctFieldType') {
-                    const element = message.element as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-                    const elementSelector = element ? this.generateElementSelector(element) : '';
-                    if (elementSelector && message.detectedType && message.correctedType) {
-                        this.handleFieldCorrection(elementSelector, message.detectedType as FieldTypeName, message.correctedType as FieldTypeName);
-                    }
-                } else if (message.action === 'getDetectionDetails') {
-                    const details = this.getFieldDetectionDetails();
-                    sendResponse({ details });
-                } else if (message.action === 'retrainModel') {
-                    this.retrainDetectionModel();
-                } else if (message.action === 'getCurrentSiteRules') {
-                    const rules = this.siteRulesEngine?.getApplicableRules();
-                    sendResponse({ rules });
-                }
-            });
-        }
+            if (shouldRescan) {
+                setTimeout(() => this.scanForFields(), 100);
+            }
+        });
 
-        private setupMutationObserver(): void {
-            const observer = new MutationObserver((mutations) => {
-                let shouldRescan = false;
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    }
+
+    private addStyles(): void {
+        const style = document.createElement('style');
+        style.textContent = `
+            .pii-autofill-filling {
+                background-color: #E8F5E8 !important;
+                transition: background-color 0.3s ease !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    private async autofillFields(userData: Record<string, any>): Promise<void> {
+        const fieldsToFill: Array<{ element: HTMLElement; value: string; fieldType: FieldTypeName }> = [];
+
+        this.detectedFields.forEach((fieldType, element) => {
+            if (userData[fieldType] && (element as any).offsetParent !== null) {
+                fieldsToFill.push({
+                    element,
+                    value: userData[fieldType],
+                    fieldType
+                });
+            }
+        });
+
+        fieldsToFill.forEach(({ element, value, fieldType }, index) => {
+            setTimeout(() => {
                 
-                mutations.forEach(mutation => {
-                    if (mutation.type === 'childList') {
-                        mutation.addedNodes.forEach(node => {
-                            if (node.nodeType === Node.ELEMENT_NODE) {
-                                const element = node as Element;
-                                const hasFormFields = element.querySelectorAll('input, textarea, select').length > 0;
-                                if (hasFormFields || this.isFormField(element)) {
-                                    shouldRescan = true;
-                                }
+                element.classList.add('pii-autofill-filling');
+                (element as HTMLInputElement).focus();
+
+                if (element.tagName.toLowerCase() === 'select') {
+                    const selectEl = element as HTMLSelectElement;
+                    
+                    // First try exact value match (for our test data and saved profiles)
+                    let option = Array.from(selectEl.options).find(opt => 
+                        opt.value === value || opt.textContent === value
+                    );
+                    
+                    // If no exact match, try smart matching based on field type
+                    if (!option) {
+                        option = Array.from(selectEl.options).find(opt => {
+                            const optText = (opt.textContent || opt.value).toLowerCase();
+                            const optValue = opt.value.toLowerCase();
+                            const targetValue = value.toLowerCase();
+                            
+                            // Handle yes/no questions (visa, interview processes)
+                            if ((fieldType === 'visaSponsorship' || fieldType === 'interviewingProcesses') && 
+                                (targetValue === 'yes' || targetValue === 'no')) {
+                                return optText === targetValue || optValue === targetValue;
                             }
+                            
+                            // Handle gender
+                            if (fieldType === 'gender') {
+                                if (targetValue === 'male' && optText === 'male') return true;
+                                if (targetValue === 'female' && optText === 'female') return true;
+                                if (targetValue === 'decline' && optText.includes('decline')) return true;
+                                return false;
+                            }
+                            
+                            // Handle Hispanic/Latino
+                            if (fieldType === 'hispanicLatino') {
+                                if (targetValue === 'yes' && optText === 'yes') return true;
+                                if (targetValue === 'no' && optText === 'no') return true;
+                                if (targetValue === 'decline' && optText.includes('decline')) return true;
+                                return false;
+                            }
+                            
+                            // Handle race - try to match common variations
+                            if (fieldType === 'race') {
+                                if (targetValue === 'white' && optText === 'white') return true;
+                                if (targetValue === 'asian' && optText === 'asian') return true;
+                                if (targetValue === 'black' && optText.includes('black')) return true;
+                                if (targetValue === 'hispanic' && optText.includes('hispanic')) return true;
+                                if (targetValue === 'decline' && optText.includes('decline')) return true;
+                                return false;
+                            }
+                            
+                            // Handle veteran status
+                            if (fieldType === 'veteranStatus') {
+                                if ((targetValue === 'no' || targetValue === 'not') && optText.includes('not a protected')) return true;
+                                if ((targetValue === 'yes' || targetValue === 'veteran') && optText.includes('identify as')) return true;
+                                if (targetValue === 'decline' && optText.includes('don\'t wish')) return true;
+                                return false;
+                            }
+                            
+                            // Handle disability status
+                            if (fieldType === 'disabilityStatus') {
+                                if ((targetValue === 'yes' || targetValue === 'have') && optText.includes('yes, i have')) return true;
+                                if ((targetValue === 'no' || targetValue === 'not') && optText.includes('no, i do not')) return true;
+                                if (targetValue === 'decline' && optText.includes('do not want')) return true;
+                                return false;
+                            }
+                            
+                            return false;
                         });
                     }
-                });
-
-                if (shouldRescan) {
-                    setTimeout(() => this.scanForFields(), 100);
-                }
-            });
-
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
-        }
-
-        private addStyles(): void {
-            const style = document.createElement('style');
-            style.textContent = `
-                .pii-autofill-highlighted {
-                    box-shadow: 0 0 0 2px #4CAF50 !important;
-                    transition: box-shadow 0.2s ease !important;
-                }
-                
-                .pii-autofill-filling {
-                    background-color: #E8F5E8 !important;
-                    transition: background-color 0.3s ease !important;
-                }
-            `;
-            document.head.appendChild(style);
-        }
-
-        private async autofillFields(userData: Partial<FieldType>): Promise<void> {
-            const fieldsToFill: Array<{ element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement; value: string; fieldType: FieldTypeName }> = [];
-
-            // Check site rules for custom handlers and security restrictions
-            let siteRules: any = null;
-            if (this.siteRulesEngine) {
-                siteRules = this.siteRulesEngine.getApplicableRules();
-                
-                // Execute beforeFill handler if exists
-                if (siteRules?.rules?.customHandlers?.beforeFill) {
-                    const canProceed = await this.siteRulesEngine.executeCustomHandler?.(
-                        siteRules.rules.customHandlers.beforeFill,
-                        { userData, fields: this.detectedFields }
-                    );
-                    if (!canProceed) {
-                        console.log('Site rules prevented autofill');
-                        return;
+                    
+                    if (option) {
+                        selectEl.value = option.value;
+                        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
                     }
-                }
-
-                // Apply security restrictions (banking sites)
-                if (siteRules?.security?.maxFields) {
-                    console.log('Applying security restrictions:', siteRules.security);
-                }
-            }
-
-            this.detectedFields.forEach((fieldType, element) => {
-                if (userData[fieldType] && element.offsetParent !== null) {
-                    // Check security restrictions
-                    if (siteRules?.security?.allowedFields &&
-                        !siteRules.security.allowedFields.includes(fieldType)) {
-                        console.log('Skipping restricted field:', fieldType);
-                        return;
-                    }
-
-                    fieldsToFill.push({ 
-                        element, 
-                        value: userData[fieldType] as string, 
-                        fieldType 
+                } else {
+                    (element as HTMLInputElement).value = value;
+                    ['input', 'change', 'blur'].forEach(eventType => {
+                        element.dispatchEvent(new Event(eventType, { bubbles: true }));
                     });
                 }
-            });
 
-            // Apply maxFields restriction
-            if (siteRules?.security?.maxFields && fieldsToFill.length > siteRules.security.maxFields) {
-                fieldsToFill.splice(siteRules.security.maxFields);
-                console.log('Limited to', siteRules.security.maxFields, 'fields for security');
-            }
+                setTimeout(() => {
+                    element.classList.remove('pii-autofill-filling');
+                }, 500);
 
-            // Get site-specific delays
-            const delays = siteRules?.delays || {};
-            const betweenFieldsDelay = delays.betweenFields || 100;
-            const beforeFillDelay = delays.beforeFill || 0;
-
-            // Apply beforeFill delay if specified
-            setTimeout(() => {
-                fieldsToFill.forEach(({ element, value }, index) => {
-                    setTimeout(() => {
-                        element.classList.add('pii-autofill-filling');
-                        element.focus();
-                        
-                        if (element.tagName.toLowerCase() === 'select') {
-                            const selectEl = element as HTMLSelectElement;
-                            const option = Array.from(selectEl.options).find(opt => 
-                                opt.value.toLowerCase().includes(value.toLowerCase()) ||
-                                opt.textContent?.toLowerCase().includes(value.toLowerCase())
-                            );
-                            if (option) {
-                                selectEl.value = option.value;
-                                selectEl.dispatchEvent(new Event('change', { bubbles: true }));
-                            }
-                        } else {
-                            (element as HTMLInputElement | HTMLTextAreaElement).value = value;
-                            ['input', 'change', 'blur'].forEach(eventType => {
-                                element.dispatchEvent(new Event(eventType, { bubbles: true }));
-                            });
-                        }
-
-                        setTimeout(() => {
-                            element.classList.remove('pii-autofill-filling');
-                        }, 500);
-                    }, index * betweenFieldsDelay);
-                });
-
-                if (fieldsToFill.length > 0) {
-                    chrome.runtime.sendMessage({
-                        action: 'autofillComplete',
-                        fieldsCount: fieldsToFill.length
-                    });
-                }
-            }, beforeFillDelay);
-        }
-
-        private getFieldsOnPage(): Record<FieldTypeName, Array<{ element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement; name: string; placeholder: string; visible: boolean }>> {
-            const fieldsMap: Record<string, Array<{ element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement; name: string; placeholder: string; visible: boolean }>> = {};
-
-            this.detectedFields.forEach((fieldType, element) => {
-                if (!fieldsMap[fieldType]) fieldsMap[fieldType] = [];
-                
-                fieldsMap[fieldType].push({
-                    element: element,
-                    name: (element as HTMLInputElement).name || element.id || 'unnamed',
-                    placeholder: (element as HTMLInputElement).placeholder || '',
-                    visible: element.offsetParent !== null
-                });
-            });
-
-            return fieldsMap;
-        }
-
-        private async handleFieldCorrection(elementSelector: string, detectedType: FieldTypeName, correctedType: FieldTypeName): Promise<void> {
-            if (!this.enhancedDetector) return;
-
-            const element = document.querySelector(elementSelector) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-            if (element) {
-                await this.enhancedDetector.recordUserCorrection(element, detectedType, correctedType);
-                
-                // Update the field mapping
-                this.detectedFields.set(element, correctedType);
-                console.log(`Field correction recorded: ${detectedType} -> ${correctedType}`);
-                
-                // Trigger retrain after collecting corrections
-                setTimeout(() => this.retrainDetectionModel(), 1000);
-            }
-        }
-
-        private getFieldDetectionDetails(): Record<string, any> {
-            if (!this.enhancedDetector) return {};
-
-            const details: Record<string, any> = {};
-            this.detectedFields.forEach((fieldType, element) => {
-                const elementDetails = this.enhancedDetector!.getDetectionDetails(element);
-                const selector = this.generateElementSelector(element);
-                
-                details[selector] = {
-                    fieldType,
-                    score: element.dataset.detectionScore || 'unknown',
-                    confidence: element.dataset.detectionConfidence || 'unknown',
-                    isLearned: element.dataset.isLearned === 'true',
-                    element: {
-                        name: (element as HTMLInputElement).name,
-                        id: element.id,
-                        placeholder: (element as HTMLInputElement).placeholder,
-                        type: (element as HTMLInputElement).type
-                    },
-                    detectionDetails: elementDetails
-                };
-            });
-
-            return details;
-        }
-
-        private generateElementSelector(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): string {
-            if (element.id) return `#${element.id}`;
-            if ((element as HTMLInputElement).name) return `input[name="${(element as HTMLInputElement).name}"]`;
-
-            // Generate a more specific selector
-            let selector = element.tagName.toLowerCase();
-            if (element.className) {
-                selector += `.${element.className.split(' ')[0]}`;
-            }
-
-            // Add position if needed
-            const parent = element.parentElement;
-            if (parent) {
-                const siblings = Array.from(parent.children).filter(child => 
-                    child.tagName === element.tagName &&
-                    child.className === element.className
-                );
-                if (siblings.length > 1) {
-                    const index = siblings.indexOf(element) + 1;
-                    selector += `:nth-child(${index})`;
-                }
-            }
-
-            return selector;
-        }
-
-        private async retrainDetectionModel(): Promise<void> {
-            if (this.enhancedDetector && this.enhancedDetector.retrainModel) {
-                await this.enhancedDetector.retrainModel();
-                console.log('Detection model retrained based on user corrections');
-                
-                // Rescan fields with updated model
-                setTimeout(() => this.scanForFields(), 500);
-            }
-        }
-
-        // Add context menu for field correction
-        private addFieldCorrectionMenu(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): void {
-            element.addEventListener('contextmenu', (e: Event) => {
-                const mouseEvent = e as MouseEvent;
-                if (mouseEvent.ctrlKey && this.detectedFields.has(element)) {
-                    e.preventDefault();
-                    this.showFieldCorrectionDialog(element);
-                }
-            });
-        }
-
-        private showFieldCorrectionDialog(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): void {
-            const detectedType = this.detectedFields.get(element);
-            const fieldTypes: FieldTypeName[] = [
-                'firstName', 'lastName', 'fullName', 'email', 'phone',
-                'street', 'city', 'state', 'zip', 'country',
-                'company', 'jobTitle', 'website', 'linkedin',
-                'twitter', 'facebook', 'instagram', 'github',
-                'youtube', 'tiktok', 'snapchat', 'discord'
-            ];
-
-            // Create a simple correction interface
-            const dialog = document.createElement('div');
-            dialog.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: white;
-                border: 2px solid #667eea;
-                border-radius: 8px;
-                padding: 20px;
-                z-index: 10000;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-                font-family: Arial, sans-serif;
-            `;
-
-            dialog.innerHTML = `
-                <h3>Correct Field Detection</h3>
-                <p>Detected as: <strong>${detectedType}</strong></p>
-                <p>Correct type:</p>
-                <select id="correctionSelect" style="width: 100%; padding: 5px; margin: 10px 0;">
-                    ${fieldTypes.map(type => `<option value="${type}" ${type === detectedType ? 'selected' : ''}>${type}</option>`).join('')}
-                </select>
-                <div style="text-align: right; margin-top: 15px;">
-                    <button id="cancelCorrection" style="margin-right: 10px; padding: 5px 15px;">Cancel</button>
-                    <button id="confirmCorrection" style="padding: 5px 15px; background: #667eea; color: white; border: none; border-radius: 4px;">Confirm</button>
-                </div>
-            `;
-
-            document.body.appendChild(dialog);
-
-            dialog.querySelector('#cancelCorrection')!.addEventListener('click', () => {
-                document.body.removeChild(dialog);
-            });
-
-            dialog.querySelector('#confirmCorrection')!.addEventListener('click', () => {
-                const correctedType = (dialog.querySelector('#correctionSelect') as HTMLSelectElement).value as FieldTypeName;
-                const selector = this.generateElementSelector(element);
-                this.handleFieldCorrection(selector, detectedType!, correctedType);
-                document.body.removeChild(dialog);
-            });
-        }
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            (window as any).piiAutofillDetector = new FieldDetector();
+            }, index * 100);
         });
-    } else {
-        (window as any).piiAutofillDetector = new FieldDetector();
+
+        if (fieldsToFill.length > 0) {
+            chrome.runtime.sendMessage({
+                action: 'autofillComplete',
+                fieldsCount: fieldsToFill.length
+            });
+        }
     }
-})();
+}
+
+// Initialize the detector
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        (window as any).piiAutofillDetector = new FieldDetector();
+    });
+} else {
+    (window as any).piiAutofillDetector = new FieldDetector();
+}
