@@ -28,7 +28,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": false,
-    "types": ["chrome"]
+    "types": ["chrome", "node"]
   },
   "include": [
     "src/**/*",

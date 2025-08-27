@@ -48,6 +48,48 @@ export interface DetectedField {
   context?: FormContext;
 }
 
+export interface DetectionResult {
+  type: FieldTypeName;
+  confidence: 'high' | 'medium' | 'low' | 'none' | 'learned';
+  score?: number;
+  isLearned?: boolean;
+}
+
+export interface UserCorrection {
+  detectedType: string;
+  correctedType: string;
+  timestamp: number;
+  signals: any;
+  rejectedTypes?: string[];
+}
+
+export interface LearningData {
+  signature: string;
+  detectedType: string;
+  correctedType: string;
+  signals: any;
+  timestamp: number;
+}
+
+export interface CustomField {
+  name: string;
+  type: string;
+  value?: string;
+  required?: boolean;
+}
+
+export interface SiteRule {
+  patterns: string[];
+  fields: { [selector: string]: any };
+  skipFields?: string[];
+}
+
+export interface FieldMapping {
+  from: string;
+  to: string;
+  confidence?: number;
+}
+
 export interface FormContext {
   formId?: string;
   url: string;
@@ -188,6 +230,9 @@ export interface MessageRequest {
   data?: any;
   tabId?: number;
   timestamp?: number;
+  element?: HTMLElement;
+  detectedType?: string;
+  correctedType?: string;
 }
 
 export interface AutofillMessage extends MessageRequest {
