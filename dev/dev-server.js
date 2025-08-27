@@ -19,9 +19,11 @@ class ExtensionDevServer {
         
         this.watchPaths = [
             'src/**/*.js',
+            'src/**/*.ts',
             'src/**/*.css',
             'src/**/*.html',
-            'manifest.json'
+            'manifest.json',
+            'types/**/*.ts'
         ];
 
         this.init();
@@ -196,6 +198,11 @@ class ExtensionDevServer {
         this.isReloading = true;
         console.log('\n🔄 Reloading extension...');
 
+        // Compile TypeScript if a .ts file changed
+        if (changedFile && changedFile.endsWith('.ts')) {
+            await this.compileTypeScript();
+        }
+
         try {
             // Backup storage state
             await this.backupStorageState();
@@ -312,6 +319,19 @@ class ExtensionDevServer {
                 ws.send(messageStr);
             }
         });
+    }
+
+    async compileTypeScript() {
+        try {
+            console.log('🔧 Compiling TypeScript files...');
+            execSync('npx tsc --noEmit --skipLibCheck', {
+                cwd: path.join(__dirname, '..'),
+                stdio: 'inherit'
+            });
+            console.log('✅ TypeScript compilation check passed');
+        } catch (error) {
+            console.error('❌ TypeScript compilation failed:', error.message);
+        }
     }
 
     loadExtensionId() {

@@ -3,6 +3,7 @@
 // Production build script for PII Autofill Extension
 const fs = require('fs').promises;
 const path = require('path');
+const { execSync } = require('child_process');
 
 class ExtensionBuilder {
     constructor() {
@@ -17,6 +18,9 @@ class ExtensionBuilder {
         try {
             // Clean build directory
             await this.cleanBuildDir();
+
+            // Compile TypeScript
+            await this.compileTypeScript();
 
             // Read manifest and get version
             await this.loadManifest();
@@ -60,6 +64,77 @@ class ExtensionBuilder {
         } catch (error) {
             console.error('Failed to clean build directory:', error);
             throw error;
+        }
+    }
+
+    async compileTypeScript() {
+        console.log('🔧 Compiling TypeScript...');
+        
+        try {
+            // Check if TypeScript files exist
+            const tsFiles = [
+                'src/content-optimized.ts',
+                'src/background.ts', 
+                'src/popup.ts'
+            ];
+
+            let hasTypeScript = false;
+            for (const file of tsFiles) {
+                try {
+                    await fs.access(path.join(this.sourceDir, file));
+                    hasTypeScript = true;
+                    break;
+                } catch {
+                    continue;
+                }
+            }
+
+            if (!hasTypeScript) {
+                console.log('  ! No TypeScript files found, skipping compilation');
+                return;
+            }
+
+            // Compile TypeScript
+            console.log('  📝 Running tsc...');
+            execSync('npx tsc --outDir dist/temp', { 
+                cwd: this.sourceDir,
+                stdio: 'inherit'
+            });
+
+            // Move compiled JS files to correct locations
+            const tempDir = path.join(this.buildDir, 'temp');
+            const srcDir = path.join(tempDir, 'src');
+            
+            if (await this.pathExists(srcDir)) {
+                const compiledFiles = await fs.readdir(srcDir);
+                
+                for (const file of compiledFiles) {
+                    if (file.endsWith('.js')) {
+                        const srcPath = path.join(srcDir, file);
+                        const destPath = path.join(this.sourceDir, 'src', file);
+                        await fs.copyFile(srcPath, destPath);
+                        console.log(`  ✓ ${file}`);
+                    }
+                }
+            }
+
+            // Clean up temp directory
+            await fs.rm(tempDir, { recursive: true, force: true });
+            
+            console.log('  ✅ TypeScript compilation completed');
+            
+        } catch (error) {
+            console.error('TypeScript compilation failed:', error.message);
+            throw error;
+        }
+    }
+
+    async pathExists(path) {
+        try {
+            await fs.access(path);
+            return true;
+        } catch {
+            return false;
         }
     }
 
