@@ -7,29 +7,17 @@ import type {
     AutofillMessage,
     DetectionMessage,
     StorageMessage,
-    UpdateMessage,
     ExtensionError
 } from '../types/extension';
-
-interface EncryptionKeyData {
-    key: ArrayBuffer;
-    algorithm: string;
-}
 
 class BackgroundManager {
     private contextMenuId: string = 'pii-autofill-menu';
     private profiles: Profile;
     private settings: Settings;
-    private encryptionKey: ArrayBuffer | null = null;
-    private syncEnabled: boolean = false;
-    private updateManager: any = null;
 
     constructor() {
-        this.profiles = { personal: {}, work: {}, custom: {} };
+        this.profiles = { personal: {} };
         this.settings = {
-            passwordProtected: false,
-            syncEnabled: true,
-            encryptSensitiveFields: false,
             autoDetectFields: true,
             debugMode: false
         };
@@ -39,111 +27,26 @@ class BackgroundManager {
 
     private async init(): Promise<void> {
         await this.loadSettings();
-        await this.setupEncryption();
         this.setupEventListeners();
         this.createContextMenu();
-        this.setupSyncMonitoring();
-        this.initializeUpdateManager();
     }
 
     private async loadSettings(): Promise<void> {
         try {
-            const result = await chrome.storage.sync.get(['settings', 'profiles', 'encryptionKey']);
+            const result = await chrome.storage.sync.get(['settings', 'profiles']);
             
             this.settings = {
                 ...this.settings,
                 ...(result.settings || {})
             };
             
-            this.profiles = result.profiles || { personal: {}, work: {}, custom: {} };
-            this.encryptionKey = result.encryptionKey || null;
-            this.syncEnabled = this.settings.syncEnabled !== false;
+            this.profiles = result.profiles || { personal: {} };
             
         } catch (error) {
             this.handleError('Error loading settings', error);
         }
     }
 
-    private async setupEncryption(): Promise<void> {
-        if (!this.encryptionKey) {
-            this.encryptionKey = await this.generateEncryptionKey();
-            await this.saveEncryptionKey();
-        }
-    }
-
-    private async generateEncryptionKey(): Promise<ArrayBuffer> {
-        const key = await crypto.subtle.generateKey(
-            {
-                name: 'AES-GCM',
-                length: 256
-            },
-            true,
-            ['encrypt', 'decrypt']
-        );
-        return await crypto.subtle.exportKey('raw', key);
-    }
-
-    private async saveEncryptionKey(): Promise<void> {
-        if (this.encryptionKey) {
-            await chrome.storage.local.set({ encryptionKey: this.encryptionKey });
-        }
-    }
-
-    private async encryptData(data: string): Promise<{ encrypted: number[]; iv: number[] }> {
-        if (!this.encryptionKey) {
-            throw new Error('Encryption key not available');
-        }
-
-        const key = await crypto.subtle.importKey(
-            'raw',
-            this.encryptionKey,
-            { name: 'AES-GCM' },
-            false,
-            ['encrypt']
-        );
-
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-        const encodedData = new TextEncoder().encode(data);
-
-        const encrypted = await crypto.subtle.encrypt(
-            {
-                name: 'AES-GCM',
-                iv: iv
-            },
-            key,
-            encodedData
-        );
-
-        return {
-            encrypted: Array.from(new Uint8Array(encrypted)),
-            iv: Array.from(iv)
-        };
-    }
-
-    private async decryptData(encryptedData: { encrypted: number[]; iv: number[] }): Promise<string> {
-        if (!this.encryptionKey) {
-            throw new Error('Encryption key not available');
-        }
-
-        const key = await crypto.subtle.importKey(
-            'raw',
-            this.encryptionKey,
-            { name: 'AES-GCM' },
-            false,
-            ['decrypt']
-        );
-
-        const decrypted = await crypto.subtle.decrypt(
-            {
-                name: 'AES-GCM',
-                iv: new Uint8Array(encryptedData.iv)
-            },
-            key,
-            new Uint8Array(encryptedData.encrypted)
-        );
-
-        return new TextDecoder().decode(decrypted);
-    }
 
     private setupEventListeners(): void {
         // Message handling
@@ -206,41 +109,12 @@ class BackgroundManager {
         });
     }
 
-    private setupSyncMonitoring(): void {
-        if (!this.syncEnabled) return;
-
-        chrome.storage.onChanged.addListener((changes, namespace) => {
-            if (namespace === 'sync') {
-                this.handleStorageChanges(changes);
-            }
-        });
-    }
-
-    private handleStorageChanges(changes: { [key: string]: chrome.storage.StorageChange }): void {
-        let shouldReload = false;
-
-        if (changes.profiles) {
-            this.profiles = changes.profiles.newValue || { personal: {}, work: {}, custom: {} };
-            shouldReload = true;
-        }
-
-        if (changes.settings) {
-            this.settings = { ...this.settings, ...(changes.settings.newValue || {}) };
-            this.syncEnabled = this.settings.syncEnabled !== false;
-            shouldReload = true;
-        }
-
-        if (shouldReload) {
-            console.log('Settings updated from sync');
-        }
-    }
 
     private async handleMessage(
         message: MessageRequest, 
         sender: chrome.runtime.MessageSender, 
         sendResponse: (response: any) => void
     ): Promise<void> {
-        console.log('Background received message:', message);
 
         try {
             switch (message.action) {
@@ -272,13 +146,6 @@ class BackgroundManager {
                     await this.handleCacheFieldData(message, sendResponse);
                     break;
 
-                case 'checkForUpdates':
-                    await this.handleUpdateCheck(message as UpdateMessage, sendResponse);
-                    break;
-
-                case 'startUpdate':
-                    await this.handleStartUpdate(message as UpdateMessage, sendResponse);
-                    break;
 
                 default:
                     sendResponse({ success: false, error: 'Unknown action' });
@@ -294,33 +161,52 @@ class BackgroundManager {
         sender: chrome.runtime.MessageSender, 
         sendResponse: (response: any) => void
     ): Promise<void> {
-        if (!sender.tab?.id) {
-            sendResponse({ success: false, error: 'No active tab' });
-            return;
+        try {
+            // Check if extension is enabled
+            const extensionState = await chrome.storage.local.get('extensionEnabled');
+            const isEnabled = extensionState.extensionEnabled !== false; // default to true
+            
+            if (!isEnabled) {
+                sendResponse({ success: false, error: 'Extension is disabled' });
+                return;
+            }
+
+            // Get active tab if not provided
+            let tabId = sender.tab?.id;
+            if (!tabId) {
+                const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (!activeTab?.id) {
+                    sendResponse({ success: false, error: 'No active tab found' });
+                    return;
+                }
+                tabId = activeTab.id;
+            }
+
+            const profileType = message.profileType || 'personal';
+            let profileData = message.data;
+
+            if (!profileData) {
+                profileData = this.profiles[profileType];
+            }
+
+
+            // Send autofill data to content script
+            const response = await chrome.tabs.sendMessage(tabId, {
+                action: 'autofill',
+                data: profileData,
+                fields: message.fields
+            });
+            
+            const safeResponse = {
+                success: true, 
+                response: response || { success: true }
+            };
+            
+            sendResponse(safeResponse);
+        } catch (error) {
+            this.handleError('Autofill error', error);
+            sendResponse({ success: false, error: (error as Error).message });
         }
-
-        const profileType = message.profileType || 'personal';
-        let profileData = message.data;
-
-        if (!profileData) {
-            profileData = this.profiles[profileType];
-        }
-
-        // Decrypt sensitive fields if encryption is enabled
-        if (this.settings.encryptSensitiveFields) {
-            profileData = await this.decryptProfile(profileData);
-        }
-
-        // Send autofill data to content script
-        chrome.tabs.sendMessage(sender.tab.id, {
-            action: 'autofill',
-            data: profileData,
-            fields: message.fields
-        }).then(() => {
-            sendResponse({ success: true });
-        }).catch((error) => {
-            sendResponse({ success: false, error: error.message });
-        });
     }
 
     private async handleDetectionRequest(
@@ -328,32 +214,57 @@ class BackgroundManager {
         sender: chrome.runtime.MessageSender,
         sendResponse: (response: any) => void
     ): Promise<void> {
-        if (!sender.tab?.id) {
-            sendResponse({ success: false, error: 'No active tab' });
-            return;
-        }
-
         try {
-            const response = await chrome.tabs.sendMessage(sender.tab.id, {
-                action: 'getDetectedFields'
-            });
-
-            // Store detected fields for popup usage
-            await chrome.storage.local.set({
-                lastDetectedFields: {
-                    tabId: sender.tab.id,
-                    url: sender.tab.url,
-                    fields: response.fieldTypes || [],
-                    count: response.count || 0,
-                    timestamp: Date.now()
+            // Get active tab if not provided
+            let tabId = sender.tab?.id;
+            if (!tabId) {
+                const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (!activeTab?.id) {
+                    sendResponse({ success: false, error: 'No active tab found' });
+                    return;
                 }
+                tabId = activeTab.id;
+            }
+
+            let response;
+            try {
+                response = await chrome.tabs.sendMessage(tabId, {
+                    action: 'getDetectedFields'
+                });
+            } catch (connectionError) {
+                // Return empty response if content script not available
+                sendResponse({ 
+                    success: true, 
+                    fieldTypes: [], 
+                    count: 0, 
+                    error: 'Content script not available on this page' 
+                });
+                return;
+            }
+
+            // Store detected fields for popup usage (with null safety)
+            const fieldsToStore = {
+                tabId: tabId,
+                fields: Array.isArray(response?.fieldTypes) ? response.fieldTypes.filter((f: any) => f != null) : [],
+                count: typeof response?.count === 'number' ? response.count : 0,
+                timestamp: Date.now()
+            };
+            
+            await chrome.storage.local.set({
+                lastDetectedFields: fieldsToStore
             });
 
-            sendResponse({ success: true, ...response });
+            const safeResponse = {
+                success: true, 
+                fieldTypes: Array.isArray(response?.fieldTypes) ? response.fieldTypes : [],
+                count: typeof response?.count === 'number' ? response.count : 0
+            };
+            
+            sendResponse(safeResponse);
 
         } catch (error) {
             this.handleError('Field detection error', error);
-            sendResponse({ success: false, error: (error as Error).message });
+            sendResponse({ success: false, error: (error as Error).message, count: 0 });
         }
     }
 
@@ -369,11 +280,7 @@ class BackgroundManager {
             return;
         }
 
-        // Encrypt sensitive fields if enabled
         let dataToSave = profileData;
-        if (this.settings.encryptSensitiveFields) {
-            dataToSave = await this.encryptProfile(profileData);
-        }
 
         this.profiles[profileType] = { ...this.profiles[profileType], ...dataToSave };
 
@@ -388,10 +295,6 @@ class BackgroundManager {
         const profileType = message.profileType || 'personal';
         let profileData = this.profiles[profileType];
 
-        // Decrypt sensitive fields if encryption is enabled
-        if (this.settings.encryptSensitiveFields) {
-            profileData = await this.decryptProfile(profileData);
-        }
 
         sendResponse({ success: true, data: profileData });
     }
@@ -424,37 +327,6 @@ class BackgroundManager {
         sendResponse({ success: true });
     }
 
-    private async handleUpdateCheck(
-        message: UpdateMessage,
-        sendResponse: (response: any) => void
-    ): Promise<void> {
-        if (this.updateManager && this.updateManager.checkForUpdates) {
-            try {
-                await this.updateManager.checkForUpdates();
-                sendResponse({ success: true });
-            } catch (error) {
-                sendResponse({ success: false, error: (error as Error).message });
-            }
-        } else {
-            sendResponse({ success: false, error: 'Update manager not available' });
-        }
-    }
-
-    private async handleStartUpdate(
-        message: UpdateMessage,
-        sendResponse: (response: any) => void
-    ): Promise<void> {
-        if (this.updateManager && this.updateManager.startUpdate) {
-            try {
-                await this.updateManager.startUpdate();
-                sendResponse({ success: true });
-            } catch (error) {
-                sendResponse({ success: false, error: (error as Error).message });
-            }
-        } else {
-            sendResponse({ success: false, error: 'Update manager not available' });
-        }
-    }
 
     private async handleContextMenuClick(
         info: chrome.contextMenus.OnClickData,
@@ -467,7 +339,7 @@ class BackgroundManager {
                 await this.fillWithProfile('personal', tab);
                 break;
             case 'autofill-work':
-                await this.fillWithProfile('work', tab);
+                await this.fillWithProfile('personal', tab);
                 break;
             case 'detect-fields':
                 await this.detectFields(tab);
@@ -491,12 +363,8 @@ class BackgroundManager {
 
         try {
             const settings = await chrome.storage.sync.get(['settings', 'profiles']);
-            let profiles = settings.profiles || { personal: {}, work: {}, custom: {} };
+            let profiles = settings.profiles || { personal: {} };
 
-            // Decrypt profiles if encryption is enabled
-            if (settings.encryptSensitiveFields) {
-                profiles = await this.decryptProfiles(profiles);
-            }
 
             const profileData = profiles[profileType] || {};
 
@@ -505,7 +373,6 @@ class BackgroundManager {
                 data: profileData
             });
 
-            console.log(`${profileType} profile autofill completed`);
         } catch (error) {
             this.handleError('Error filling with profile', error);
         }
@@ -519,7 +386,6 @@ class BackgroundManager {
                 action: 'getDetectedFields'
             });
 
-            console.log('Detected fields:', response.fieldTypes);
             
             // Store detected fields for popup usage
             await chrome.storage.local.set({
@@ -545,49 +411,6 @@ class BackgroundManager {
         }
     }
 
-    private async encryptProfile(profile: Partial<FieldType>): Promise<Partial<FieldType>> {
-        const sensitiveFields = ['cardNumber', 'cvv', 'password'];
-        const encryptedProfile: Partial<FieldType> = { ...profile };
-
-        for (const field of sensitiveFields) {
-            const key = field as keyof FieldType;
-            const value = profile[key];
-            if (value) {
-                const encrypted = await this.encryptData(value);
-                (encryptedProfile as any)[key] = encrypted;
-            }
-        }
-
-        return encryptedProfile;
-    }
-
-    private async decryptProfile(profile: Partial<FieldType>): Promise<Partial<FieldType>> {
-        const decryptedProfile: Partial<FieldType> = { ...profile };
-        
-        for (const [key, value] of Object.entries(profile)) {
-            if (value && typeof value === 'object' && 'encrypted' in value) {
-                try {
-                    const decrypted = await this.decryptData(value as any);
-                    (decryptedProfile as any)[key] = decrypted;
-                } catch (error) {
-                    console.warn(`Failed to decrypt field ${key}:`, error);
-                    (decryptedProfile as any)[key] = '[ENCRYPTED]';
-                }
-            }
-        }
-
-        return decryptedProfile;
-    }
-
-    private async decryptProfiles(profiles: Profile): Promise<Profile> {
-        const decrypted: Profile = { personal: {}, work: {}, custom: {} };
-        
-        for (const [profileType, profileData] of Object.entries(profiles)) {
-            decrypted[profileType as keyof Profile] = await this.decryptProfile(profileData);
-        }
-        
-        return decrypted;
-    }
 
     private async exportAllData(): Promise<any> {
         const result = await chrome.storage.sync.get();
@@ -621,40 +444,9 @@ class BackgroundManager {
         await this.loadSettings();
     }
 
-    private initializeUpdateManager(): void {
-        // Initialize update manager
-        try {
-            // Dynamic import would be ideal, but for compatibility we'll use global
-            this.updateManager = (globalThis as any).UpdateManager ? new (globalThis as any).UpdateManager() : null;
-        } catch (error) {
-            console.warn('Update manager initialization failed:', error);
-        }
-    }
-
-    private async syncData(): Promise<void> {
-        if (!this.syncEnabled) return;
-
-        try {
-            const localData = await chrome.storage.local.get(['profiles', 'settings']);
-            
-            if (localData.profiles || localData.settings) {
-                await chrome.storage.sync.set(localData);
-                console.log('Data synced successfully');
-            }
-        } catch (error) {
-            this.handleError('Sync error', error);
-        }
-    }
 
     private handleError(context: string, error: any = null): void {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        const extensionError: ExtensionError = new Error(`${context}: ${errorMessage}`) as ExtensionError;
-        extensionError.context = context;
-        extensionError.severity = 'medium';
-        
-        console.error('Background error:', extensionError);
-        
-        // Could send to error reporting service in production
+        const errorMessage = error instanceof Error ? error.message : String(error || 'Unknown error');
     }
 }
 
@@ -666,5 +458,4 @@ if (typeof globalThis !== 'undefined') {
     (globalThis as any).backgroundManager = backgroundManager;
 }
 
-// Export for type checking
-export default BackgroundManager;
+// Export for type checking (removed for content script compatibility)
