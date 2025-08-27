@@ -15,392 +15,157 @@
                     <span class="icon">🔍</span>
                     Detect Fields
                 </button>
-                <button id="settingsBtn" class="btn btn-icon" title="Settings">
-                    <span class="icon">⚙️</span>
+                <button id="toggleExtensionBtn" class="btn btn-secondary" title="Enable/Disable Extension">
+                    <span class="icon">⚡</span>
+                    <span id="toggleExtensionText">Disable</span>
                 </button>
             </div>
         </header>
-
-        <div class="tabs">
-            <button class="tab-button active" data-tab="personal">Personal</button>
-            <button class="tab-button" data-tab="work">Work</button>
-            <button class="tab-button" data-tab="custom">Custom</button>
-            <button class="tab-button" data-tab="rules">Site Rules</button>
-            <button class="tab-button" data-tab="dev" id="devTab" style="display: none;">Dev Tools</button>
-            <button class="tab-button" data-tab="settings">Settings</button>
-        </div>
 
         <div class="tab-content active" id="personal-tab">
             <div class="profile-section">
                 <h3>Personal Information</h3>
                 <div class="form-group">
-                    <label for="firstName">First Name</label>
-                    <input type="text" id="firstName" name="firstName" data-field="firstName">
+                    <label for="firstName">First Name *</label>
+                    <input type="text" id="firstName" name="firstName" data-field="firstName" required>
                 </div>
                 <div class="form-group">
-                    <label for="lastName">Last Name</label>
-                    <input type="text" id="lastName" name="lastName" data-field="lastName">
+                    <label for="lastName">Last Name *</label>
+                    <input type="text" id="lastName" name="lastName" data-field="lastName" required>
                 </div>
                 <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" data-field="email">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" name="email" data-field="email" required>
                 </div>
                 <div class="form-group">
-                    <label for="phone">Phone</label>
-                    <input type="tel" id="phone" name="phone" data-field="phone">
+                    <label for="phone">Phone *</label>
+                    <input type="tel" id="phone" name="phone" data-field="phone" required>
                 </div>
-            </div>
-
-            <div class="profile-section">
-                <h3>Address</h3>
                 <div class="form-group">
-                    <label for="street">Street Address</label>
-                    <input type="text" id="street" name="street" data-field="street">
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="city">City</label>
-                        <input type="text" id="city" name="city" data-field="city">
-                    </div>
-                    <div class="form-group">
-                        <label for="state">State</label>
-                        <input type="text" id="state" name="state" data-field="state">
-                    </div>
-                    <div class="form-group">
-                        <label for="zip">ZIP Code</label>
-                        <input type="text" id="zip" name="zip" data-field="zip">
-                    </div>
+                    <label for="location">Location (City) *</label>
+                    <input type="text" id="location" name="location" data-field="location" placeholder="e.g., San Francisco, CA" required>
                 </div>
                 <div class="form-group">
                     <label for="country">Country</label>
-                    <input type="text" id="country" name="country" data-field="country">
+                    <input type="text" id="country" name="country" data-field="country" placeholder="e.g., United States">
                 </div>
             </div>
 
-            <div class="profile-section">
-                <h3>Social Media</h3>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="linkedin">LinkedIn</label>
-                        <input type="text" id="linkedin" name="linkedin" data-field="linkedin" placeholder="https://linkedin.com/in/username">
-                    </div>
-                    <div class="form-group">
-                        <label for="twitter">Twitter</label>
-                        <input type="text" id="twitter" name="twitter" data-field="twitter" placeholder="@username">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="facebook">Facebook</label>
-                        <input type="text" id="facebook" name="facebook" data-field="facebook" placeholder="https://facebook.com/username">
-                    </div>
-                    <div class="form-group">
-                        <label for="instagram">Instagram</label>
-                        <input type="text" id="instagram" name="instagram" data-field="instagram" placeholder="@username">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="github">GitHub</label>
-                        <input type="text" id="github" name="github" data-field="github" placeholder="https://github.com/username">
-                    </div>
-                    <div class="form-group">
-                        <label for="youtube">YouTube</label>
-                        <input type="text" id="youtube" name="youtube" data-field="youtube" placeholder="https://youtube.com/@username">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="tiktok">TikTok</label>
-                        <input type="text" id="tiktok" name="tiktok" data-field="tiktok" placeholder="@username">
-                    </div>
-                    <div class="form-group">
-                        <label for="snapchat">Snapchat</label>
-                        <input type="text" id="snapchat" name="snapchat" data-field="snapchat" placeholder="username">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="discord">Discord</label>
-                    <input type="text" id="discord" name="discord" data-field="discord" placeholder="username#1234">
-                </div>
-            </div>
-        </div>
-
-        <div class="tab-content" id="work-tab">
             <div class="profile-section">
                 <h3>Professional Information</h3>
                 <div class="form-group">
-                    <label for="company">Company</label>
-                    <input type="text" id="company" name="company" data-field="company">
+                    <label for="company">Current Company</label>
+                    <input type="text" id="company" name="company" data-field="company" placeholder="If you are currently employed, please tell us the name of your employer">
                 </div>
                 <div class="form-group">
-                    <label for="jobTitle">Job Title</label>
-                    <input type="text" id="jobTitle" name="jobTitle" data-field="jobTitle">
+                    <label for="jobTitle">Current Title</label>
+                    <input type="text" id="jobTitle" name="jobTitle" data-field="jobTitle" placeholder="Your role including seniority level (e.g. Software Engineer II)">
                 </div>
                 <div class="form-group">
-                    <label for="workEmail">Work Email</label>
-                    <input type="email" id="workEmail" name="workEmail" data-field="email">
+                    <label for="linkedin">LinkedIn Profile</label>
+                    <input type="url" id="linkedin" name="linkedin" data-field="linkedin" placeholder="https://linkedin.com/in/username">
                 </div>
                 <div class="form-group">
-                    <label for="workPhone">Work Phone</label>
-                    <input type="tel" id="workPhone" name="workPhone" data-field="phone">
+                    <label for="github">GitHub Profile</label>
+                    <input type="url" id="github" name="github" data-field="github" placeholder="https://github.com/username">
                 </div>
                 <div class="form-group">
-                    <label for="website">Website</label>
-                    <input type="url" id="website" name="website" data-field="website">
+                    <label for="xProfile">X Profile</label>
+                    <input type="url" id="xProfile" name="xProfile" data-field="xProfile" placeholder="https://x.com/username">
                 </div>
                 <div class="form-group">
-                    <label for="linkedin">LinkedIn</label>
-                    <input type="url" id="linkedin" name="linkedin" data-field="linkedin">
+                    <label for="googleScholar">Google Scholar Profile</label>
+                    <input type="url" id="googleScholar" name="googleScholar" data-field="googleScholar" placeholder="https://scholar.google.com/citations?user=...">
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <h3>Work Authorization & Status</h3>
+                <div class="form-group">
+                    <label for="visaSponsorship">Require Visa Sponsorship? *</label>
+                    <select id="visaSponsorship" name="visaSponsorship" data-field="visaSponsorship" required>
+                        <option value="">Select...</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="interviewingProcesses">Currently Active in Other Interview Processes? *</label>
+                    <select id="interviewingProcesses" name="interviewingProcesses" data-field="interviewingProcesses" required>
+                        <option value="">Select...</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <h3>Demographics (Optional)</h3>
+                <div class="form-group">
+                    <label for="gender">Gender</label>
+                    <select id="gender" name="gender" data-field="gender">
+                        <option value="">Select...</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Decline To Self Identify">Decline To Self Identify</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="hispanicLatino">Are you Hispanic/Latino?</label>
+                    <select id="hispanicLatino" name="hispanicLatino" data-field="hispanicLatino">
+                        <option value="">Select...</option>
+                        <option value="No">No</option>
+                        <option value="Yes">Yes</option>
+                        <option value="Decline To Self Identify">Decline To Self Identify</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="race">Race</label>
+                    <select id="race" name="race" data-field="race">
+                        <option value="">Select...</option>
+                        <option value="American Indian or Alaskan Native">American Indian or Alaskan Native</option>
+                        <option value="Asian">Asian</option>
+                        <option value="Black or African American">Black or African American</option>
+                        <option value="Hispanic or Latino">Hispanic or Latino</option>
+                        <option value="White">White</option>
+                        <option value="Native Hawaiian or Other Pacific Islander">Native Hawaiian or Other Pacific Islander</option>
+                        <option value="Two or More Races">Two or More Races</option>
+                        <option value="Decline To Self Identify">Decline To Self Identify</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="veteranStatus">Veteran Status</label>
+                    <select id="veteranStatus" name="veteranStatus" data-field="veteranStatus">
+                        <option value="">Select...</option>
+                        <option value="I am not a protected veteran">I am not a protected veteran</option>
+                        <option value="I identify as one or more of the classifications of a protected veteran">I identify as one or more of the classifications of a protected veteran</option>
+                        <option value="I don't wish to answer">I don't wish to answer</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="disabilityStatus">Disability Status</label>
+                    <select id="disabilityStatus" name="disabilityStatus" data-field="disabilityStatus">
+                        <option value="">Select...</option>
+                        <option value="Yes, I have a disability, or have had one in the past">Yes, I have a disability, or have had one in the past</option>
+                        <option value="No, I do not have a disability and have not had one in the past">No, I do not have a disability and have not had one in the past</option>
+                        <option value="I do not want to answer">I do not want to answer</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <h3>Experience</h3>
+                <div class="form-group">
+                    <label for="exceptionalWork">What exceptional work have you done? *</label>
+                    <textarea id="exceptionalWork" name="exceptionalWork" data-field="exceptionalWork" rows="4" placeholder="Describe your most exceptional work or achievements..." required></textarea>
                 </div>
             </div>
         </div>
 
-        <div class="tab-content" id="custom-tab">
-            <div class="profile-section">
-                <div class="section-header">
-                    <h3>Custom Fields</h3>
-                    <button id="addCustomField" class="btn btn-secondary">+ Add Field</button>
-                </div>
-                <div id="customFieldsContainer">
-                    <!-- Custom fields will be dynamically added here -->
-                </div>
-            </div>
-
-            <div class="profile-section">
-                <h3>Field Mapping</h3>
-                <div class="mapping-container">
-                    <div class="mapping-header">
-                        <span>Detected Field</span>
-                        <span>Maps To</span>
-                    </div>
-                    <div id="fieldMappingContainer">
-                        <!-- Field mappings will be dynamically added here -->
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="tab-content" id="rules-tab">
-            <div class="profile-section">
-                <div class="section-header">
-                    <h3>Current Site Rules</h3>
-                    <button id="refreshSiteRules" class="btn btn-secondary">Refresh</button>
-                </div>
-                <div id="currentSiteRules">
-                    <p class="no-fields">No specific rules for current site</p>
-                </div>
-            </div>
-
-            <div class="profile-section">
-                <div class="section-header">
-                    <h3>Custom Site Rules</h3>
-                    <button id="addCustomRule" class="btn btn-secondary">+ Add Rule</button>
-                </div>
-                <div id="customRulesContainer">
-                    <!-- Custom rules will be populated here -->
-                </div>
-            </div>
-
-            <div class="profile-section">
-                <h3>Rule Templates</h3>
-                <div class="rule-templates">
-                    <div class="template-item">
-                        <span class="template-name">E-commerce Checkout</span>
-                        <button class="btn btn-secondary use-template-btn" data-template="ecommerce">Use Template</button>
-                    </div>
-                    <div class="template-item">
-                        <span class="template-name">Job Application</span>
-                        <button class="btn btn-secondary use-template-btn" data-template="job">Use Template</button>
-                    </div>
-                    <div class="template-item">
-                        <span class="template-name">Contact Form</span>
-                        <button class="btn btn-secondary use-template-btn" data-template="contact">Use Template</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="profile-section">
-                <h3>Import/Export Rules</h3>
-                <div class="rules-import-export">
-                    <button id="exportRules" class="btn btn-secondary">Export Rules</button>
-                    <div class="file-input-wrapper">
-                        <input type="file" id="importRules" accept=".json" hidden>
-                        <button id="importRulesBtn" class="btn btn-secondary">Import Rules</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="tab-content" id="dev-tab">
-            <div class="profile-section">
-                <div class="section-header">
-                    <h3>🛠️ Development Tools</h3>
-                    <div>
-                        <button id="reloadExtension" class="btn btn-secondary">🔄 Reload</button>
-                        <button id="clearDevLogs" class="btn btn-secondary">🗑️ Clear</button>
-                    </div>
-                </div>
-                <div class="dev-status">
-                    <span class="dev-status-indicator" id="devStatus">🔴 Disconnected</span>
-                    <span id="devServerUrl">ws://localhost:3001</span>
-                </div>
-            </div>
-
-            <div class="profile-section">
-                <h3>📝 Console Logs</h3>
-                <div class="log-controls">
-                    <label>
-                        <input type="checkbox" id="logError" checked> Errors
-                    </label>
-                    <label>
-                        <input type="checkbox" id="logWarn" checked> Warnings
-                    </label>
-                    <label>
-                        <input type="checkbox" id="logInfo" checked> Info
-                    </label>
-                    <label>
-                        <input type="checkbox" id="logDebug"> Debug
-                    </label>
-                    <button id="downloadLogs" class="btn btn-secondary">💾 Download</button>
-                </div>
-                <div id="devLogs" class="dev-log-container"></div>
-            </div>
-
-            <div class="profile-section">
-                <h3>💾 Storage Inspector</h3>
-                <div class="storage-controls">
-                    <button id="refreshStorage" class="btn btn-secondary">🔄 Refresh</button>
-                    <button id="exportStorage" class="btn btn-secondary">📤 Export</button>
-                    <button id="clearStorage" class="btn btn-secondary">🗑️ Clear All</button>
-                </div>
-                <div class="storage-tabs">
-                    <button class="storage-tab active" data-storage="sync">Sync Storage</button>
-                    <button class="storage-tab" data-storage="local">Local Storage</button>
-                </div>
-                <div id="storageContent" class="storage-viewer"></div>
-            </div>
-
-            <div class="profile-section">
-                <h3>🔍 Extension Info</h3>
-                <div class="extension-info">
-                    <div class="info-row">
-                        <span class="info-label">Extension ID:</span>
-                        <span id="extensionId">Loading...</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Version:</span>
-                        <span id="extensionVersion">Loading...</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Manifest Version:</span>
-                        <span id="manifestVersion">Loading...</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Last Reload:</span>
-                        <span id="lastReload">Never</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="tab-content" id="settings-tab">
-            <div class="profile-section">
-                <h3>Import/Export</h3>
-                <div class="import-export-section">
-                    <button id="exportProfiles" class="btn btn-secondary">Export Profiles</button>
-                    <div class="file-input-wrapper">
-                        <input type="file" id="importProfiles" accept=".json" hidden>
-                        <button id="importProfilesBtn" class="btn btn-secondary">Import Profiles</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="profile-section">
-                <h3>Security Settings</h3>
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="enablePassword">
-                        <span class="checkmark"></span>
-                        Enable password protection for sensitive fields
-                    </label>
-                </div>
-                <div class="form-group" id="passwordGroup" style="display: none;">
-                    <label for="masterPassword">Master Password</label>
-                    <input type="password" id="masterPassword" placeholder="Enter master password">
-                </div>
-            </div>
-
-            <div class="profile-section">
-                <h3>Updates</h3>
-                <div class="update-section">
-                    <div class="update-info">
-                        <span id="currentVersion">Version: Loading...</span>
-                        <button id="checkUpdates" class="btn btn-secondary">Check for Updates</button>
-                    </div>
-                    <div id="updateNotification" class="update-notification" style="display: none;">
-                        <div class="update-message">
-                            <span class="update-icon">🔄</span>
-                            <div class="update-text">
-                                <strong>Update Available!</strong>
-                                <div id="updateVersion">Version 1.1.0 is ready to install</div>
-                            </div>
-                        </div>
-                        <div class="update-actions">
-                            <button id="installUpdate" class="btn btn-primary">Install Now</button>
-                            <button id="dismissUpdate" class="btn btn-secondary">Later</button>
-                        </div>
-                    </div>
-                    <div id="updateProgress" class="update-progress" style="display: none;">
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="progressFill"></div>
-                        </div>
-                        <div id="updateStatus">Updating extension...</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="profile-section">
-                <h3>Quick Fill Sites</h3>
-                <div id="quickFillSites">
-                    <div class="quick-fill-item">
-                        <span>Amazon</span>
-                        <button class="btn btn-primary quick-fill-btn" data-site="amazon">Quick Fill</button>
-                    </div>
-                    <div class="quick-fill-item">
-                        <span>LinkedIn</span>
-                        <button class="btn btn-primary quick-fill-btn" data-site="linkedin">Quick Fill</button>
-                    </div>
-                    <div class="quick-fill-item">
-                        <span>Forms (Generic)</span>
-                        <button class="btn btn-primary quick-fill-btn" data-site="generic">Quick Fill</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="profile-section">
-                <h3>Detected Fields</h3>
-                <div id="detectedFieldsInfo">
-                    <p class="no-fields">No fields detected on current page</p>
-                </div>
-            </div>
-        </div>
 
         <div class="footer-actions">
             <button id="fillAllFields" class="btn btn-primary btn-large">Fill All Fields</button>
             <button id="saveProfile" class="btn btn-secondary">Save Profile</button>
-        </div>
-    </div>
-
-    <!-- Password Modal -->
-    <div id="passwordModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <h3>Enter Master Password</h3>
-            <input type="password" id="modalPassword" placeholder="Enter master password">
-            <div class="modal-actions">
-                <button id="confirmPassword" class="btn btn-primary">Confirm</button>
-                <button id="cancelPassword" class="btn btn-secondary">Cancel</button>
-            </div>
         </div>
     </div>
 
