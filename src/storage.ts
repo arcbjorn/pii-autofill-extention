@@ -79,7 +79,7 @@ class StorageManager {
     // Profile management
     async getProfiles(): Promise<{ [key: string]: Profile }> {
         const result = await chrome.storage.sync.get('profiles');
-        return result.profiles || { personal: {}, work: {}, custom: {} };
+        return result.profiles || { personal: { personal: {} } };
     }
 
     async saveProfile(type: string, data: Profile): Promise<void> {
@@ -95,7 +95,7 @@ class StorageManager {
 
     async getProfile(type: string): Promise<Profile> {
         const profiles = await this.getProfiles();
-        return profiles[type] || { personal: {}, work: {}, custom: {} };
+        return profiles[type] || { personal: {} };
     }
 
     // Settings management
