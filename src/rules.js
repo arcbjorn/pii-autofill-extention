@@ -1,123 +1,29 @@
-import type { FieldTypeName } from '../types/extension';
-
-interface SiteRuleConfig {
-  patterns: string[];
-  rules: SiteRules;
-}
-
-interface SiteRules {
-  profile?: ProfileRules;
-  checkout?: CheckoutRules;
-  application?: ApplicationRules;
-  linkedin?: LinkedInRules;
-  security?: SecurityRules;
-  skipFields?: string[];
-  delays?: DelayConfig;
-  customHandlers?: CustomHandlers;
-  triggers?: TriggerConfig;
-}
-
-interface ProfileRules {
-  enabled: boolean;
-  fields: { [selector: string]: FieldConfig };
-}
-
-interface CheckoutRules {
-  enabled: boolean;
-  steps?: CheckoutStep[];
-  fields?: { [selector: string]: FieldConfig };
-}
-
-interface CheckoutStep {
-  name: string;
-  urlPattern: string;
-  fields: { [selector: string]: FieldConfig };
-  nextButton?: string;
-  waitForLoad?: number;
-  skipFields?: string[];
-}
-
-interface ApplicationRules {
-  enabled: boolean;
-  resumeFields?: { [selector: string]: FieldConfig };
-  addressFields?: { [selector: string]: FieldConfig };
-}
-
-interface LinkedInRules {
-  enabled: boolean;
-  specificSelectors: { [selector: string]: FieldConfig };
-}
-
-interface SecurityRules {
-  enabled: boolean;
-  requireConfirmation?: boolean;
-  maxFields?: number;
-  allowedFields?: string[];
-  restrictedFields?: string[];
-}
-
-interface FieldConfig {
-  type: string;
-  priority: 'high' | 'medium' | 'low';
-  sensitive?: boolean;
-  format?: string;
-  fileUpload?: boolean;
-}
-
-interface DelayConfig {
-  betweenFields?: number;
-  afterStep?: number;
-  afterSection?: number;
-  beforeFill?: number;
-}
-
-interface CustomHandlers {
-  beforeFill?: string;
-  afterFill?: string;
-  securityCheck?: string;
-}
-
-interface TriggerConfig {
-  autoAdvance?: boolean;
-  confirmBeforeFill?: boolean;
-}
-
-interface SiteInfo {
-  type: 'custom' | 'default';
-  pattern: string;
-  rules: SiteRules;
-}
-
-interface FieldMapping {
-  [elementKey: string]: {
-    type: string;
-    priority: 'high' | 'medium' | 'low';
-    sensitive: boolean;
-    format?: string;
-    element: HTMLElement;
-  };
-}
-
-interface StepInfo {
-  step: string;
-  fields: { [selector: string]: FieldConfig };
-  nextButton?: string;
-  waitForLoad: number;
-  skipFields: string[];
-}
-
-interface SecurityResult {
-  maxFields?: number;
-  allowedTypes?: string[];
-}
-
 class SiteRulesEngine {
-    private customRules: Map<string, SiteRules>;
-    private defaultRules: Map<string, SiteRuleConfig>;
-    private currentSite: SiteInfo | null;
-    private stepState: Map<string, any>;
-
     constructor() {
+        Object.defineProperty(this, "customRules", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "defaultRules", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "currentSite", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "stepState", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         this.customRules = new Map();
         this.defaultRules = new Map();
         this.currentSite = null;
@@ -125,33 +31,30 @@ class SiteRulesEngine {
         this.initializeDefaultRules();
         this.loadCustomRules();
     }
-
-    private async loadCustomRules(): Promise<void> {
+    async loadCustomRules() {
         try {
             const result = await chrome.storage.sync.get(['customSiteRules']);
             const customRules = result.customSiteRules || {};
-            
             Object.entries(customRules).forEach(([pattern, rules]) => {
-                this.customRules.set(pattern, rules as SiteRules);
+                this.customRules.set(pattern, rules);
             });
-            
             console.log('Custom site rules loaded:', this.customRules.size, 'rules');
-        } catch (error) {
+        }
+        catch (error) {
             console.error('Error loading custom rules:', error);
         }
     }
-
-    private async saveCustomRules(): Promise<void> {
+    async saveCustomRules() {
         try {
             const customRulesObj = Object.fromEntries(this.customRules);
             await chrome.storage.sync.set({ customSiteRules: customRulesObj });
             console.log('Custom site rules saved');
-        } catch (error) {
+        }
+        catch (error) {
             console.error('Error saving custom rules:', error);
         }
     }
-
-    private initializeDefaultRules(): void {
+    initializeDefaultRules() {
         // Amazon rules
         this.defaultRules.set('amazon', {
             patterns: ['amazon.com', 'amazon.ca', 'amazon.co.uk', 'amazon.de', 'amazon.fr', 'amazon.it'],
@@ -211,7 +114,6 @@ class SiteRulesEngine {
                 }
             }
         });
-
         // Google rules
         this.defaultRules.set('google', {
             patterns: ['google.com', 'accounts.google.com', 'myaccount.google.com'],
@@ -245,7 +147,6 @@ class SiteRulesEngine {
                 }
             }
         });
-
         // Banking sites rules
         this.defaultRules.set('banking', {
             patterns: [
@@ -298,7 +199,6 @@ class SiteRulesEngine {
                 }
             }
         });
-
         // Job sites rules
         this.defaultRules.set('jobs', {
             patterns: [
@@ -344,7 +244,6 @@ class SiteRulesEngine {
                 }
             }
         });
-
         // E-commerce general rules
         this.defaultRules.set('ecommerce', {
             patterns: [
@@ -373,21 +272,17 @@ class SiteRulesEngine {
                 ]
             }
         });
-
         console.log('Default site rules initialized:', this.defaultRules.size, 'rule sets');
     }
-
-    public getCurrentSite(): SiteInfo | null {
+    getCurrentSite() {
         const hostname = window.location.hostname.toLowerCase();
         const pathname = window.location.pathname.toLowerCase();
-
         // Check custom rules first
         for (const [pattern, rules] of this.customRules.entries()) {
             if (this.matchesPattern(hostname, pattern) || this.matchesPattern(pathname, pattern)) {
                 return { type: 'custom', pattern, rules };
             }
         }
-
         // Check default rules
         for (const [siteType, config] of this.defaultRules.entries()) {
             for (const pattern of config.patterns) {
@@ -396,31 +291,26 @@ class SiteRulesEngine {
                 }
             }
         }
-
         return null;
     }
-
-    private matchesPattern(text: string, pattern: string): boolean {
+    matchesPattern(text, pattern) {
         if (pattern.includes('*')) {
             const regexPattern = pattern.replace(/\*/g, '.*');
             return new RegExp(regexPattern, 'i').test(text);
         }
         return text.includes(pattern.toLowerCase());
     }
-
-    public shouldSkipField(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): boolean {
+    shouldSkipField(element) {
         const site = this.getCurrentSite();
-        if (!site) return false;
-
+        if (!site)
+            return false;
         const skipFields = site.rules.skipFields || [];
-        
         for (const skipPattern of skipFields) {
             if (this.elementMatchesSelector(element, skipPattern)) {
                 console.log('Skipping field due to site rule:', skipPattern);
                 return true;
             }
         }
-
         // Check for security restrictions (banking)
         if (site.rules.security?.restrictedFields) {
             const fieldType = this.getElementFieldType(element);
@@ -429,58 +319,56 @@ class SiteRulesEngine {
                 return true;
             }
         }
-
         return false;
     }
-
-    private elementMatchesSelector(element: HTMLElement, selector: string): boolean {
+    elementMatchesSelector(element, selector) {
         try {
             return element.matches(selector);
-        } catch (e) {
+        }
+        catch (e) {
             // Fallback for complex selectors
             try {
                 return document.querySelector(selector) === element;
-            } catch (e2) {
+            }
+            catch (e2) {
                 return false;
             }
         }
     }
-
-    private getElementFieldType(element: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): string {
+    getElementFieldType(element) {
         const name = element.name?.toLowerCase() || '';
         const id = element.id?.toLowerCase() || '';
-        const type = (element as HTMLInputElement).type?.toLowerCase() || '';
-
-        if (name.includes('password') || type === 'password') return 'password';
-        if (name.includes('ssn') || name.includes('social')) return 'ssn';
-        if (name.includes('card') || name.includes('credit')) return 'cardNumber';
-        if (name.includes('cvv') || name.includes('security')) return 'cvv';
-
+        const type = element.type?.toLowerCase() || '';
+        if (name.includes('password') || type === 'password')
+            return 'password';
+        if (name.includes('ssn') || name.includes('social'))
+            return 'ssn';
+        if (name.includes('card') || name.includes('credit'))
+            return 'cardNumber';
+        if (name.includes('cvv') || name.includes('security'))
+            return 'cvv';
         return 'unknown';
     }
-
-    public getFieldMappingForSite(elements: HTMLElement[]): { [key: string]: FieldConfig } {
+    getFieldMappingForSite(elements) {
         const site = this.getCurrentSite();
-        if (!site) return {};
-
-        const mapping: { [key: string]: FieldConfig } = {};
+        if (!site)
+            return {};
+        const mapping = {};
         const rules = site.rules;
-
         const fieldSets = [
             rules.profile?.fields,
             rules.checkout?.fields,
             rules.application?.resumeFields,
             rules.application?.addressFields,
             rules.linkedin?.specificSelectors
-        ].filter(Boolean) as Array<{ [selector: string]: FieldConfig }>;
-
+        ].filter(Boolean);
         elements.forEach(element => {
-            if (this.shouldSkipField(element as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)) return;
-
+            if (this.shouldSkipField(element))
+                return;
             for (const fieldSet of fieldSets) {
                 for (const [selector, config] of Object.entries(fieldSet)) {
                     if (this.elementMatchesSelector(element, selector)) {
-                        const fieldConfig: FieldConfig = {
+                        const fieldConfig = {
                             type: config.type,
                             priority: config.priority || 'medium',
                             sensitive: config.sensitive || false
@@ -494,70 +382,58 @@ class SiteRulesEngine {
                 }
             }
         });
-
         return mapping;
     }
-
-    private generateElementKey(element: HTMLElement): string {
-        if (element.id) return `#${element.id}`;
-        if ((element as HTMLInputElement).name) return `[name="${(element as HTMLInputElement).name}"]`;
-        
+    generateElementKey(element) {
+        if (element.id)
+            return `#${element.id}`;
+        if (element.name)
+            return `[name="${element.name}"]`;
         const path = this.getElementPath(element);
         return path;
     }
-
-    private getElementPath(element: HTMLElement): string {
-        const path: string[] = [];
-        let current: HTMLElement | null = element;
-
+    getElementPath(element) {
+        const path = [];
+        let current = element;
         while (current && current.nodeType === Node.ELEMENT_NODE) {
             let selector = current.nodeName.toLowerCase();
-            
             if (current.id) {
                 selector += `#${current.id}`;
                 path.unshift(selector);
                 break;
             }
-            
             if (current.className) {
                 const classes = current.className.split(' ').filter(c => c);
                 if (classes.length > 0) {
                     selector += `.${classes[0]}`;
                 }
             }
-            
-            const parent = current.parentNode as HTMLElement;
+            const parent = current.parentNode;
             if (parent) {
-                const siblings = Array.from(parent.children).filter(child => child.nodeName === current!.nodeName);
+                const siblings = Array.from(parent.children).filter(child => child.nodeName === current.nodeName);
                 if (siblings.length > 1) {
                     const index = siblings.indexOf(current) + 1;
                     selector += `:nth-child(${index})`;
                 }
             }
-            
             path.unshift(selector);
             current = parent;
         }
-
         return path.join(' > ');
     }
-
-    public async handleMultiStepProcess(currentStep?: string): Promise<StepInfo | null> {
+    async handleMultiStepProcess(currentStep) {
         const site = this.getCurrentSite();
-        if (!site || !site.rules.checkout?.steps) return null;
-
+        if (!site || !site.rules.checkout?.steps)
+            return null;
         const steps = site.rules.checkout.steps;
         const currentUrl = window.location.href;
-
         for (const step of steps) {
             if (currentUrl.includes(step.urlPattern) || (step.name === currentStep)) {
                 console.log('Handling multi-step process:', step.name);
-                
                 // Store step state
                 this.stepState.set('currentStep', step.name);
                 this.stepState.set('stepConfig', step);
-                
-                const stepInfo: StepInfo = {
+                const stepInfo = {
                     step: step.name,
                     fields: step.fields,
                     waitForLoad: step.waitForLoad || 1000,
@@ -569,11 +445,9 @@ class SiteRulesEngine {
                 return stepInfo;
             }
         }
-
         return null;
     }
-
-    public async executeCustomHandler(handlerName: string, context: any = {}): Promise<boolean | SecurityResult> {
+    async executeCustomHandler(handlerName, context = {}) {
         try {
             switch (handlerName) {
                 case 'handleGoogleBeforeFill':
@@ -588,55 +462,44 @@ class SiteRulesEngine {
                     console.warn('Unknown custom handler:', handlerName);
                     return true;
             }
-        } catch (error) {
+        }
+        catch (error) {
             console.error('Error executing custom handler:', handlerName, error);
             return false;
         }
     }
-
-    private async handleGoogleBeforeFill(context: any): Promise<boolean> {
+    async handleGoogleBeforeFill(context) {
         // Check for active CAPTCHA
         const captchaElements = document.querySelectorAll('div[data-sitekey], .g-recaptcha, #recaptcha, iframe[src*="recaptcha"]');
         if (captchaElements.length > 0) {
             console.log('CAPTCHA detected, skipping autofill');
             return false;
         }
-
         // Wait for any dynamic content to load
-        await new Promise<void>(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 500));
         return true;
     }
-
-    private async handleGoogleAfterFill(context: any): Promise<boolean> {
+    async handleGoogleAfterFill(context) {
         // Check if any required fields are still empty
         const requiredFields = document.querySelectorAll('input[required]');
-        const emptyRequired = Array.from(requiredFields).filter(field => !(field as HTMLInputElement).value);
-        
+        const emptyRequired = Array.from(requiredFields).filter(field => !field.value);
         if (emptyRequired.length > 0) {
             console.log('Some required fields remain empty:', emptyRequired.length);
         }
-        
         return true;
     }
-
-    private async handleBankingBeforeFill(context: any): Promise<boolean> {
+    async handleBankingBeforeFill(context) {
         // Show security warning
-        const confirmed = await this.showSecurityConfirmation(
-            'Banking Site Detected',
-            'This appears to be a banking website. Only basic contact information will be filled. Continue?'
-        );
-        
+        const confirmed = await this.showSecurityConfirmation('Banking Site Detected', 'This appears to be a banking website. Only basic contact information will be filled. Continue?');
         if (!confirmed) {
             console.log('User declined banking autofill');
             return false;
         }
-
         // Additional security checks
         const securityResult = await this.performBankingSecurity(context);
         return typeof securityResult === 'boolean' ? securityResult : true;
     }
-
-    private async performBankingSecurity(context: any): Promise<boolean | SecurityResult> {
+    async performBankingSecurity(context) {
         // Check for suspicious elements
         const suspiciousSelectors = [
             'input[name*="password"]',
@@ -644,7 +507,6 @@ class SiteRulesEngine {
             'input[name*="account"]',
             'input[name*="pin"]'
         ];
-
         for (const selector of suspiciousSelectors) {
             const elements = document.querySelectorAll(selector);
             if (elements.length > 0) {
@@ -652,12 +514,10 @@ class SiteRulesEngine {
                 return { maxFields: 2, allowedTypes: ['firstName', 'lastName', 'email'] };
             }
         }
-
         return true;
     }
-
-    private async showSecurityConfirmation(title: string, message: string): Promise<boolean> {
-        return new Promise<boolean>((resolve) => {
+    async showSecurityConfirmation(title, message) {
+        return new Promise((resolve) => {
             const dialog = document.createElement('div');
             dialog.style.cssText = `
                 position: fixed;
@@ -672,7 +532,6 @@ class SiteRulesEngine {
                 justify-content: center;
                 font-family: Arial, sans-serif;
             `;
-            
             dialog.innerHTML = `
                 <div style="
                     background: white;
@@ -703,44 +562,36 @@ class SiteRulesEngine {
                     </div>
                 </div>
             `;
-            
             document.body.appendChild(dialog);
-            
-            dialog.querySelector('#cancelSecurity')!.addEventListener('click', () => {
+            dialog.querySelector('#cancelSecurity').addEventListener('click', () => {
                 document.body.removeChild(dialog);
                 resolve(false);
             });
-            
-            dialog.querySelector('#confirmSecurity')!.addEventListener('click', () => {
+            dialog.querySelector('#confirmSecurity').addEventListener('click', () => {
                 document.body.removeChild(dialog);
                 resolve(true);
             });
         });
     }
-
-    public addCustomRule(pattern: string, rules: SiteRules): void {
+    addCustomRule(pattern, rules) {
         this.customRules.set(pattern, rules);
         this.saveCustomRules();
     }
-
-    public removeCustomRule(pattern: string): void {
+    removeCustomRule(pattern) {
         this.customRules.delete(pattern);
         this.saveCustomRules();
     }
-
-    public getCustomRules(): { [pattern: string]: SiteRules } {
+    getCustomRules() {
         return Object.fromEntries(this.customRules);
     }
-
-    public exportRules(): { custom: { [pattern: string]: SiteRules }; defaults: { [pattern: string]: SiteRuleConfig }; exportDate: string } {
+    exportRules() {
         return {
             custom: Object.fromEntries(this.customRules),
             defaults: Object.fromEntries(this.defaultRules),
             exportDate: new Date().toISOString()
         };
     }
-
-    public async importRules(rulesData: { custom?: { [pattern: string]: SiteRules } }): Promise<void> {
+    async importRules(rulesData) {
         if (rulesData.custom) {
             Object.entries(rulesData.custom).forEach(([pattern, rules]) => {
                 this.customRules.set(pattern, rules);
@@ -749,34 +600,26 @@ class SiteRulesEngine {
         }
         console.log('Rules imported successfully');
     }
-
-    public getApplicableRules(): {
-        site: string;
-        type: 'custom' | 'default';
-        rules: SiteRules;
-        skipFields: string[];
-        delays: DelayConfig;
-        security: SecurityRules;
-    } | null {
+    getApplicableRules() {
         const site = this.getCurrentSite();
-        if (!site) return null;
-
+        if (!site)
+            return null;
         return {
             site: site.pattern,
             type: site.type,
             rules: site.rules,
             skipFields: site.rules.skipFields || [],
             delays: site.rules.delays || {},
-            security: site.rules.security || {} as SecurityRules
+            security: site.rules.security || {}
         };
     }
 }
-
 // Export for use in content script
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = SiteRulesEngine;
-} else if (typeof window !== 'undefined') {
-    (window as any).SiteRulesEngine = SiteRulesEngine;
 }
-
+else if (typeof window !== 'undefined') {
+    window.SiteRulesEngine = SiteRulesEngine;
+}
 export default SiteRulesEngine;
+//# sourceMappingURL=rules.js.map

@@ -53,6 +53,8 @@ export interface DetectionResult {
   confidence: 'high' | 'medium' | 'low' | 'none' | 'learned';
   score?: number;
   isLearned?: boolean;
+  method: 'autocomplete' | 'type' | 'pattern' | 'enhanced' | 'ml';
+  context?: DetectionContext;
 }
 
 export interface UserCorrection {
@@ -128,6 +130,8 @@ export interface CacheEntry<T = any> {
   lastAccessed?: number;
   hits?: number;
   context?: any;
+  storageType?: 'sync' | 'local';
+  url?: string;
 }
 
 export interface CacheStats {
@@ -189,12 +193,6 @@ export interface AutocompleteMap {
   [autocompleteValue: string]: FieldTypeName;
 }
 
-export interface DetectionResult {
-  type: FieldTypeName;
-  confidence: number;
-  method: 'autocomplete' | 'type' | 'pattern' | 'enhanced' | 'ml';
-  context?: DetectionContext;
-}
 
 export interface DetectionContext {
   formContext: FormContext;
@@ -212,6 +210,22 @@ export interface SiteRule {
   customHandlers?: Record<FieldTypeName, string>;
   exclusions?: string[];
   metadata?: SiteRuleMetadata;
+}
+
+export interface FieldConfig {
+  type: string;
+  priority: 'low' | 'medium' | 'high';
+  sensitive: boolean;
+  format?: string;
+  element?: HTMLElement;
+}
+
+export interface StepInfo {
+  step: string;
+  fields: { [selector: string]: FieldConfig; };
+  nextButton?: string;
+  waitForLoad: number;
+  skipFields: string[];
 }
 
 export interface SiteRuleMetadata {
